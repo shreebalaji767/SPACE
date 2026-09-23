@@ -5858,11 +5858,7 @@ def generate_sector(seed, x, y):
         "dead"
     ]
 
-    planet_count =
-        rng.randint(
-            1,
-            6
-        )
+    planet_count = rng.randint(1, 6)
 
     for i in range(
         planet_count

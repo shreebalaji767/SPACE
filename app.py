@@ -5796,46 +5796,26 @@ def generate_sector(seed, x, y):
     ]
 
     sector = {
-
         "x": x,
-
         "y": y,
 
-        "biome":
-            rng.choice(
-                biomes
-            ),
+        "biome": rng.choice(biomes),
 
-        "danger":
-            rng.randint(
-                1,
-                10
-            ),
+        "danger": rng.randint(1, 10),
 
         "system_name":
-            rng.choice(names) +
-            "-" +
-            str(
-                rng.randint(
-                    100,
-                    999
-                )
-            ),
+            rng.choice(names)
+            + "-"
+            + str(rng.randint(100, 999)),
 
         "star":
-            rng.choice(
-                stars
-            ),
+            rng.choice(stars),
 
         "faction":
-            rng.choice(
-                factions
-            ),
+            rng.choice(factions),
 
         "special":
-            rng.choice(
-                specials
-            ),
+            rng.choice(specials),
 
         "planets": [],
 
@@ -5844,6 +5824,135 @@ def generate_sector(seed, x, y):
         "resources": []
     }
 
+
+    # ========================================================
+    # PLANETS
+    # ========================================================
+
+    planet_types = [
+        "rocky",
+        "ice",
+        "gas",
+        "ocean",
+        "lava",
+        "dead"
+    ]
+
+    planet_count = rng.randint(1, 6)
+
+    for i in range(planet_count):
+
+        sector["planets"].append({
+
+            "name":
+                f"{chr(65 + i)}-"
+                f"{rng.randint(10, 99)}",
+
+            "type":
+                rng.choice(planet_types),
+
+            "radius":
+                rng.randint(15, 50),
+
+            "orbit":
+                rng.randint(180, 700)
+        })
+
+
+    # ========================================================
+    # STRUCTURES
+    # ========================================================
+
+    structure_types = [
+        "station",
+        "wreck",
+        "mining_colony",
+        "pirate_base",
+        "alien_ruin",
+        "research_outpost"
+    ]
+
+    structure_count = rng.randint(1, 6)
+
+    for i in range(structure_count):
+
+        sector["structures"].append({
+
+            "id":
+                f"S-{x}-{y}-{i}",
+
+            "type":
+                rng.choice(structure_types),
+
+            "x":
+                round(
+                    rng.uniform(
+                        -2200,
+                        2200
+                    ),
+                    2
+                ),
+
+            "y":
+                round(
+                    rng.uniform(
+                        -2200,
+                        2200
+                    ),
+                    2
+                ),
+
+            "radius":
+                rng.randint(40, 100)
+        })
+
+
+    # ========================================================
+    # RESOURCES
+    # ========================================================
+
+    resource_types = [
+        "iron",
+        "crystal",
+        "alien"
+    ]
+
+    resource_count = rng.randint(8, 25)
+
+    for i in range(resource_count):
+
+        sector["resources"].append({
+
+            "id":
+                f"R-{x}-{y}-{i}",
+
+            "type":
+                rng.choice(resource_types),
+
+            "x":
+                round(
+                    rng.uniform(
+                        -2450,
+                        2450
+                    ),
+                    2
+                ),
+
+            "y":
+                round(
+                    rng.uniform(
+                        -2450,
+                        2450
+                    ),
+                    2
+                ),
+
+            "amount":
+                rng.randint(1, 8)
+        })
+
+
+    return sector
 
     # ========================================================
     # PLANETS
@@ -5913,11 +6022,7 @@ def generate_sector(seed, x, y):
         "research_outpost"
     ]
 
-    structure_count =
-        rng.randint(
-            1,
-            6
-        )
+      resource_count = rng.randint(8, 25)
 
     for i in range(
         structure_count

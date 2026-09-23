@@ -1,15 +1,13 @@
 from flask import Flask, render_template_string, jsonify, request
 import os
-import math
 import random
 import hashlib
-import json
 
 app = Flask(__name__)
 
 # ============================================================
 # VOID SPACE
-# Minecraft-like procedural space universe
+# Persistent Procedural Space Sandbox
 # ============================================================
 
 HTML = r"""
@@ -19,6 +17,7 @@ HTML = r"""
 <meta charset="UTF-8">
 <meta name="viewport"
       content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
 <title>VOID SPACE</title>
 
 <style>
@@ -33,8 +32,12 @@ html,body{
     height:100%;
     overflow:hidden;
     background:#02030a;
-    color:#fff;
+    color:white;
     font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    touch-action:none;
 }
 
 canvas{
@@ -46,6 +49,14 @@ canvas{
     background:#02030a;
 }
 
+.hidden{
+    display:none!important;
+}
+
+/* ============================================================
+   UI
+============================================================ */
+
 #ui{
     position:fixed;
     inset:0;
@@ -55,74 +66,112 @@ canvas{
 .screen{
     position:absolute;
     inset:0;
+
     display:flex;
     align-items:center;
     justify-content:center;
-    pointer-events:auto;
-    background:
-        radial-gradient(circle at center,
-        rgba(30,40,90,.15),
-        rgba(0,0,0,.82));
-}
 
-.hidden{
-    display:none!important;
+    pointer-events:auto;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(35,55,120,.15),
+            rgba(0,0,0,.86)
+        );
 }
 
 .panel{
     width:min(900px,92vw);
     max-height:90vh;
+
     overflow:auto;
-    padding:30px;
-    border:1px solid rgba(130,170,255,.3);
-    background:rgba(5,8,20,.9);
-    box-shadow:
-        0 0 60px rgba(50,100,255,.15),
-        inset 0 0 30px rgba(255,255,255,.02);
-    backdrop-filter:blur(12px);
+
+    padding:32px;
+
+    border:
+        1px solid
+        rgba(120,165,255,.28);
+
     border-radius:18px;
+
+    background:
+        rgba(5,8,20,.92);
+
+    box-shadow:
+        0 0 70px
+        rgba(40,90,255,.16);
+
+    backdrop-filter:blur(14px);
 }
 
 .logo{
-    font-size:clamp(42px,9vw,100px);
+    font-size:clamp(45px,9vw,100px);
     font-weight:900;
-    letter-spacing:.18em;
+
     text-align:center;
+
+    letter-spacing:.16em;
+
     text-shadow:
-        0 0 10px #fff,
+        0 0 10px white,
         0 0 30px #5c8dff,
         0 0 70px #315cff;
 }
 
 .subtitle{
     text-align:center;
+
     color:#8ea7d8;
+
     letter-spacing:.3em;
-    margin:10px 0 35px;
+
+    margin:
+        10px
+        0
+        35px;
 }
 
 button{
-    appearance:none;
-    border:1px solid rgba(120,160,255,.4);
-    background:rgba(20,30,65,.8);
-    color:#fff;
-    padding:14px 20px;
+    border:
+        1px solid
+        rgba(120,160,255,.4);
+
+    background:
+        rgba(20,30,65,.8);
+
+    color:white;
+
+    padding:
+        14px
+        20px;
+
     border-radius:10px;
+
     cursor:pointer;
+
     font-size:15px;
+
     transition:.15s;
 }
 
 button:hover{
-    background:rgba(50,75,145,.8);
+    background:
+        rgba(50,75,145,.8);
+
     border-color:#8bb1ff;
-    transform:translateY(-1px);
+
+    transform:
+        translateY(-1px);
 }
 
 .menu-buttons{
     display:grid;
+
     gap:12px;
+
     width:min(360px,100%);
+
     margin:auto;
 }
 
@@ -131,233 +180,383 @@ h1,h2,h3{
 }
 
 p{
-    line-height:1.6;
     color:#b9c4df;
+    line-height:1.6;
 }
+
+.grid{
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(220px,1fr)
+        );
+
+    gap:12px;
+}
+
+.card{
+    padding:16px;
+
+    border:
+        1px solid
+        rgba(120,160,255,.18);
+
+    border-radius:12px;
+
+    background:
+        rgba(15,22,45,.55);
+}
+
+/* ============================================================
+   HUD
+============================================================ */
 
 #hud{
     position:absolute;
     inset:0;
+
     pointer-events:none;
 }
 
 .topbar{
     position:absolute;
+
     top:15px;
     left:15px;
     right:15px;
+
     display:flex;
+
     justify-content:space-between;
-    gap:15px;
+
+    align-items:flex-start;
+
+    gap:10px;
 }
 
 .hudbox{
-    min-width:150px;
-    padding:12px 15px;
-    border:1px solid rgba(120,160,255,.2);
+    min-width:130px;
+
+    padding:10px 13px;
+
+    border:
+        1px solid
+        rgba(120,160,255,.2);
+
     border-radius:12px;
-    background:rgba(2,5,15,.62);
+
+    background:
+        rgba(2,5,15,.62);
+
     backdrop-filter:blur(8px);
 }
 
 .hud-title{
     color:#6e91d8;
-    font-size:10px;
+
+    font-size:9px;
+
     letter-spacing:.15em;
+
     margin-bottom:4px;
 }
 
 .hud-value{
     font-weight:bold;
+
+    white-space:nowrap;
 }
 
-.bars{
-    display:grid;
-    gap:6px;
-}
+#minimap{
+    width:170px;
+    height:170px;
 
-.bar{
-    width:220px;
-    max-width:35vw;
-    height:8px;
-    background:#121827;
-    border-radius:10px;
-    overflow:hidden;
-}
+    border:
+        1px solid
+        rgba(120,160,255,.3);
 
-.bar > div{
-    height:100%;
-    width:100%;
-    transition:.15s;
-}
-
-#hullBar{
-    background:#d84a55;
-}
-
-#shieldBar{
-    background:#5e9eff;
-}
-
-#xpBar{
-    background:#bd70ff;
-}
-
-.bottomHud{
-    position:absolute;
-    bottom:18px;
-    left:18px;
-    right:18px;
-    display:flex;
-    justify-content:space-between;
-    align-items:end;
-}
-
-.info{
-    padding:12px 15px;
-    background:rgba(2,5,15,.65);
-    border:1px solid rgba(120,160,255,.2);
     border-radius:12px;
+
+    background:
+        rgba(0,0,0,.7);
 }
 
 #eventText{
     position:absolute;
-    top:110px;
+
+    top:115px;
     left:50%;
-    transform:translateX(-50%);
-    padding:10px 18px;
+
+    transform:
+        translateX(-50%);
+
+    padding:
+        10px
+        20px;
+
     border-radius:20px;
-    background:rgba(0,0,0,.65);
+
+    background:
+        rgba(0,0,0,.7);
+
     color:#dce7ff;
+
     opacity:0;
+
     transition:.3s;
+
+    white-space:nowrap;
 }
 
 #eventText.show{
     opacity:1;
 }
 
+.bottomHud{
+    position:absolute;
+
+    bottom:18px;
+    left:18px;
+    right:18px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:end;
+}
+
+.info{
+    padding:
+        12px
+        15px;
+
+    background:
+        rgba(2,5,15,.68);
+
+    border:
+        1px solid
+        rgba(120,160,255,.2);
+
+    border-radius:12px;
+}
+
+.bar{
+    width:220px;
+    max-width:35vw;
+
+    height:8px;
+
+    margin-top:3px;
+
+    background:#121827;
+
+    border-radius:10px;
+
+    overflow:hidden;
+}
+
+.bar div{
+    height:100%;
+
+    width:100%;
+
+    transition:.15s;
+}
+
+#hullBar{
+    background:#e0525e;
+}
+
+#shieldBar{
+    background:#5e9eff;
+}
+
+#energyBar{
+    background:#bd70ff;
+}
+
+#xpBar{
+    background:#65e6a4;
+}
+
 #crosshair{
     position:absolute;
-    width:22px;
-    height:22px;
-    border:1px solid rgba(180,210,255,.7);
+
+    width:24px;
+    height:24px;
+
+    border:
+        1px solid
+        rgba(190,220,255,.7);
+
     border-radius:50%;
-    transform:translate(-50%,-50%);
+
+    transform:
+        translate(-50%,-50%);
+
     display:none;
 }
 
-#minimap{
-    width:170px;
-    height:170px;
-    border:1px solid rgba(120,160,255,.3);
-    border-radius:12px;
-    background:rgba(0,0,0,.7);
+#crosshair::before,
+#crosshair::after{
+    content:"";
+
+    position:absolute;
+
+    background:
+        rgba(190,220,255,.6);
 }
+
+#crosshair::before{
+    width:32px;
+    height:1px;
+
+    left:-5px;
+    top:11px;
+}
+
+#crosshair::after{
+    width:1px;
+    height:32px;
+
+    left:11px;
+    top:-5px;
+}
+
+/* ============================================================
+   MOBILE
+============================================================ */
 
 #mobileControls{
-    position:absolute;
-    inset:0;
     display:none;
+
+    position:absolute;
+
+    inset:0;
+
     pointer-events:none;
 }
 
 .joystick{
     position:absolute;
+
     left:25px;
-    bottom:35px;
+    bottom:30px;
+
     width:130px;
     height:130px;
-    border:2px solid rgba(150,180,255,.25);
+
+    border:
+        2px solid
+        rgba(150,180,255,.25);
+
     border-radius:50%;
+
     pointer-events:auto;
 }
 
 .stick{
     position:absolute;
+
     width:55px;
     height:55px;
+
     left:35px;
     top:35px;
+
     border-radius:50%;
-    background:rgba(100,140,255,.25);
+
+    background:
+        rgba(100,140,255,.25);
 }
 
 .mobileButtons{
     position:absolute;
+
     right:25px;
     bottom:30px;
+
     display:grid;
-    grid-template-columns:80px 80px;
+
+    grid-template-columns:
+        80px 80px;
+
     gap:12px;
+
     pointer-events:auto;
 }
 
 .mobileButtons button{
     width:80px;
     height:65px;
+
     padding:5px;
-    font-size:12px;
+
+    font-size:11px;
 }
+
+/* ============================================================
+   INVENTORY
+============================================================ */
 
 #inventoryGrid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(140px,1fr)
+        );
+
     gap:10px;
 }
 
 .item{
     padding:14px;
-    background:rgba(20,28,55,.7);
-    border:1px solid rgba(120,160,255,.2);
+
+    background:
+        rgba(20,28,55,.7);
+
+    border:
+        1px solid
+        rgba(120,160,255,.2);
+
     border-radius:10px;
 }
 
 .item b{
     display:block;
+
     margin-bottom:5px;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:12px;
-}
-
-.card{
-    padding:15px;
-    border:1px solid rgba(120,160,255,.18);
-    border-radius:12px;
-    background:rgba(15,22,45,.55);
-}
-
-.warning{
-    color:#ff9b9b;
-}
-
-.good{
-    color:#9bffcf;
-}
-
 @media(max-width:700px){
+
     .topbar{
-        top:8px;
-        left:8px;
-        right:8px;
+        top:7px;
+        left:7px;
+        right:7px;
     }
 
     .hudbox{
         min-width:0;
-        padding:8px;
+        padding:7px 9px;
     }
 
-    .bar{
-        width:120px;
+    .hudbox:nth-child(2){
+        display:none;
     }
 
     #minimap{
-        width:120px;
-        height:120px;
+        width:115px;
+        height:115px;
+    }
+
+    .bar{
+        width:125px;
     }
 
     #mobileControls{
@@ -365,9 +564,19 @@ p{
     }
 
     .bottomHud{
-        bottom:10px;
-        left:10px;
-        right:10px;
+        bottom:8px;
+        left:8px;
+        right:8px;
+    }
+
+    .info{
+        padding:8px;
+        font-size:11px;
+    }
+
+    #eventText{
+        top:90px;
+        font-size:11px;
     }
 }
 </style>
@@ -379,221 +588,450 @@ p{
 
 <div id="ui">
 
-    <!-- MAIN MENU -->
-    <section id="menu" class="screen">
-        <div class="panel">
-            <div class="logo">VOID SPACE</div>
-            <div class="subtitle">A PROCEDURAL UNIVERSE</div>
+<!-- ==========================================================
+     MAIN MENU
+=========================================================== -->
 
-            <div class="menu-buttons">
-                <button onclick="newGame()">NEW UNIVERSE</button>
-                <button onclick="continueGame()">CONTINUE</button>
-                <button onclick="showScreen('howto')">HOW TO PLAY</button>
-                <button onclick="showScreen('settings')">SETTINGS</button>
-            </div>
+<section id="menu" class="screen">
 
-            <p style="text-align:center;margin-top:30px">
-                Every universe is generated from a seed.
-                Explore. Fight. Discover. Survive.
-            </p>
-        </div>
-    </section>
+<div class="panel">
 
-    <!-- HOW TO -->
-    <section id="howto" class="screen hidden">
-        <div class="panel">
-            <h1>HOW TO PLAY</h1>
+<div class="logo">
+VOID SPACE
+</div>
 
-            <div class="grid">
-                <div class="card">
-                    <h3>MOVE</h3>
-                    <p>WASD / Arrow Keys</p>
-                </div>
+<div class="subtitle">
+A PROCEDURAL UNIVERSE
+</div>
 
-                <div class="card">
-                    <h3>AIM</h3>
-                    <p>Move the mouse.</p>
-                </div>
+<div class="menu-buttons">
 
-                <div class="card">
-                    <h3>FIRE</h3>
-                    <p>Left Mouse Button / Space</p>
-                </div>
+<button onclick="newGame()">
+NEW UNIVERSE
+</button>
 
-                <div class="card">
-                    <h3>BOOST</h3>
-                    <p>Hold Shift.</p>
-                </div>
+<button onclick="continueGame()">
+CONTINUE
+</button>
 
-                <div class="card">
-                    <h3>PAUSE</h3>
-                    <p>P / Escape</p>
-                </div>
+<button onclick="showScreen('howto')">
+HOW TO PLAY
+</button>
 
-                <div class="card">
-                    <h3>WORLD</h3>
-                    <p>Explore sectors and discover procedural structures.</p>
-                </div>
-            </div>
-
-            <br>
-            <button onclick="showScreen('menu')">BACK</button>
-        </div>
-    </section>
-
-    <!-- SETTINGS -->
-    <section id="settings" class="screen hidden">
-        <div class="panel">
-            <h1>SETTINGS</h1>
-
-            <div class="card">
-                <p>Universe seed</p>
-                <input id="seedInput"
-                       style="margin-top:10px;width:100%;padding:12px;border-radius:8px;border:1px solid #334;background:#080c18;color:white">
-            </div>
-
-            <br>
-
-            <button onclick="applySeed()">USE SEED</button>
-            <button onclick="showScreen('menu')">BACK</button>
-        </div>
-    </section>
-
-    <!-- PAUSE -->
-    <section id="pause" class="screen hidden">
-        <div class="panel">
-            <h1>PAUSED</h1>
-            <div class="menu-buttons">
-                <button onclick="togglePause()">RESUME</button>
-                <button onclick="showInventory()">INVENTORY</button>
-                <button onclick="saveGame()">SAVE UNIVERSE</button>
-                <button onclick="showScreen('menu');gameRunning=false">MAIN MENU</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- INVENTORY -->
-    <section id="inventory" class="screen hidden">
-        <div class="panel">
-            <h1>SHIP INVENTORY</h1>
-            <div id="inventoryGrid"></div>
-            <br>
-            <button onclick="showScreen('pause')">BACK</button>
-        </div>
-    </section>
-
-    <!-- GAME OVER -->
-    <section id="gameover" class="screen hidden">
-        <div class="panel">
-            <h1>SHIP DESTROYED</h1>
-            <p id="gameOverText"></p>
-            <br>
-            <div class="menu-buttons">
-                <button onclick="continueGame()">LOAD UNIVERSE</button>
-                <button onclick="newGame()">NEW UNIVERSE</button>
-                <button onclick="showScreen('menu')">MAIN MENU</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- HUD -->
-    <div id="hud" class="hidden">
-
-        <div class="topbar">
-
-            <div class="hudbox">
-                <div class="hud-title">SECTOR</div>
-                <div id="sectorText" class="hud-value">0 : 0</div>
-            </div>
-
-            <div class="hudbox">
-                <div class="hud-title">SYSTEM</div>
-                <div id="systemText" class="hud-value">UNKNOWN</div>
-            </div>
-
-            <div class="hudbox">
-                <div class="hud-title">CREDITS</div>
-                <div id="creditsText" class="hud-value">0</div>
-            </div>
-
-            <canvas id="minimap"></canvas>
-
-        </div>
-
-        <div id="eventText"></div>
-
-        <div id="crosshair"></div>
-
-        <div class="bottomHud">
-
-            <div class="info">
-
-                <div>HULL</div>
-                <div class="bar">
-                    <div id="hullBar"></div>
-                </div>
-
-                <div style="margin-top:6px">SHIELD</div>
-                <div class="bar">
-                    <div id="shieldBar"></div>
-                </div>
-
-                <div style="margin-top:6px">XP</div>
-                <div class="bar">
-                    <div id="xpBar"></div>
-                </div>
-
-            </div>
-
-            <div class="info">
-                <div id="weaponText">PULSE CANNON</div>
-                <div id="levelText">LEVEL 1</div>
-                <div id="objectiveText">EXPLORE</div>
-            </div>
-
-        </div>
-
-        <div id="mobileControls">
-
-            <div class="joystick" id="joystick">
-                <div class="stick" id="stick"></div>
-            </div>
-
-            <div class="mobileButtons">
-                <button id="fireBtn">FIRE</button>
-                <button id="boostBtn">BOOST</button>
-            </div>
-
-        </div>
-
-    </div>
+<button onclick="showScreen('settings')">
+SETTINGS
+</button>
 
 </div>
+
+<p style="text-align:center;margin-top:30px">
+One seed creates an entire universe.
+Explore it. Fight in it. Change it.
+</p>
+
+</div>
+
+</section>
+
+
+<!-- ==========================================================
+     HOW TO PLAY
+=========================================================== -->
+
+<section id="howto" class="screen hidden">
+
+<div class="panel">
+
+<h1>HOW TO PLAY</h1>
+
+<div class="grid">
+
+<div class="card">
+<h3>MOVE</h3>
+<p>WASD or Arrow Keys.</p>
+</div>
+
+<div class="card">
+<h3>ROTATE</h3>
+<p>The spaceship smoothly rotates toward your mouse.</p>
+</div>
+
+<div class="card">
+<h3>FIRE</h3>
+<p>Left Mouse Button or Space.</p>
+</div>
+
+<div class="card">
+<h3>BOOST</h3>
+<p>Hold Shift.</p>
+</div>
+
+<div class="card">
+<h3>WEAPONS</h3>
+<p>Keys 1-5 switch weapons.</p>
+</div>
+
+<div class="card">
+<h3>WORLD</h3>
+<p>Move between procedural sectors.</p>
+</div>
+
+<div class="card">
+<h3>DISCOVER</h3>
+<p>Find stations, wrecks, colonies and alien ruins.</p>
+</div>
+
+<div class="card">
+<h3>COMBAT</h3>
+<p>Enemies are generated according to the danger of the region.</p>
+</div>
+
+</div>
+
+<br>
+
+<button onclick="showScreen('menu')">
+BACK
+</button>
+
+</div>
+
+</section>
+
+
+<!-- ==========================================================
+     SETTINGS
+=========================================================== -->
+
+<section id="settings" class="screen hidden">
+
+<div class="panel">
+
+<h1>SETTINGS</h1>
+
+<div class="card">
+
+<p>Universe Seed</p>
+
+<input
+id="seedInput"
+style="
+margin-top:10px;
+width:100%;
+padding:12px;
+border-radius:8px;
+border:1px solid #334;
+background:#080c18;
+color:white;
+"
+>
+
+</div>
+
+<br>
+
+<button onclick="applySeed()">
+USE SEED
+</button>
+
+<button onclick="showScreen('menu')">
+BACK
+</button>
+
+</div>
+
+</section>
+
+
+<!-- ==========================================================
+     PAUSE
+=========================================================== -->
+
+<section id="pause" class="screen hidden">
+
+<div class="panel">
+
+<h1>PAUSED</h1>
+
+<div class="menu-buttons">
+
+<button onclick="togglePause()">
+RESUME
+</button>
+
+<button onclick="showInventory()">
+INVENTORY
+</button>
+
+<button onclick="saveGame()">
+SAVE UNIVERSE
+</button>
+
+<button onclick="showScreen('menu');gameRunning=false">
+MAIN MENU
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ==========================================================
+     INVENTORY
+=========================================================== -->
+
+<section id="inventory" class="screen hidden">
+
+<div class="panel">
+
+<h1>SHIP INVENTORY</h1>
+
+<div id="inventoryGrid"></div>
+
+<br>
+
+<button onclick="showScreen('pause')">
+BACK
+</button>
+
+</div>
+
+</section>
+
+
+<!-- ==========================================================
+     GAME OVER
+=========================================================== -->
+
+<section id="gameover" class="screen hidden">
+
+<div class="panel">
+
+<h1>SHIP DESTROYED</h1>
+
+<p id="gameOverText"></p>
+
+<br>
+
+<div class="menu-buttons">
+
+<button onclick="continueGame()">
+LOAD UNIVERSE
+</button>
+
+<button onclick="newGame()">
+NEW UNIVERSE
+</button>
+
+<button onclick="showScreen('menu')">
+MAIN MENU
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ==========================================================
+     HUD
+=========================================================== -->
+
+<div id="hud" class="hidden">
+
+<div class="topbar">
+
+<div class="hudbox">
+
+<div class="hud-title">
+SECTOR
+</div>
+
+<div id="sectorText" class="hud-value">
+0 : 0
+</div>
+
+</div>
+
+
+<div class="hudbox">
+
+<div class="hud-title">
+SYSTEM
+</div>
+
+<div id="systemText" class="hud-value">
+UNKNOWN
+</div>
+
+</div>
+
+
+<div class="hudbox">
+
+<div class="hud-title">
+CREDITS
+</div>
+
+<div id="creditsText" class="hud-value">
+0
+</div>
+
+</div>
+
+
+<canvas id="minimap"></canvas>
+
+</div>
+
+
+<div id="eventText"></div>
+
+<div id="crosshair"></div>
+
+
+<div class="bottomHud">
+
+<div class="info">
+
+<div>
+HULL
+</div>
+
+<div class="bar">
+<div id="hullBar"></div>
+</div>
+
+
+<div style="margin-top:6px">
+SHIELD
+</div>
+
+<div class="bar">
+<div id="shieldBar"></div>
+</div>
+
+
+<div style="margin-top:6px">
+ENERGY
+</div>
+
+<div class="bar">
+<div id="energyBar"></div>
+</div>
+
+
+<div style="margin-top:6px">
+XP
+</div>
+
+<div class="bar">
+<div id="xpBar"></div>
+</div>
+
+</div>
+
+
+<div class="info">
+
+<div id="weaponText">
+PULSE CANNON
+</div>
+
+<div id="levelText">
+LEVEL 1
+</div>
+
+<div id="objectiveText">
+EXPLORE
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ========================================================
+     MOBILE CONTROLS
+========================================================= -->
+
+<div id="mobileControls">
+
+<div
+class="joystick"
+id="joystick"
+>
+
+<div
+class="stick"
+id="stick"
+></div>
+
+</div>
+
+
+<div class="mobileButtons">
+
+<button id="fireBtn">
+FIRE
+</button>
+
+<button id="boostBtn">
+BOOST
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
 
 <script>
 
 /* ============================================================
-   BASIC SETUP
+   CANVAS
 ============================================================ */
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas =
+    document.getElementById("game");
 
-const minimap = document.getElementById("minimap");
-const mctx = minimap.getContext("2d");
+const ctx =
+    canvas.getContext("2d");
 
-let W = innerWidth;
-let H = innerHeight;
+const minimap =
+    document.getElementById("minimap");
+
+const mctx =
+    minimap.getContext("2d");
+
+let W=innerWidth;
+let H=innerHeight;
 
 function resize(){
-    W = canvas.width = innerWidth;
-    H = canvas.height = innerHeight;
 
-    minimap.width = minimap.clientWidth * devicePixelRatio;
-    minimap.height = minimap.clientHeight * devicePixelRatio;
+    W=canvas.width=innerWidth;
+    H=canvas.height=innerHeight;
+
+    minimap.width=
+        minimap.clientWidth *
+        devicePixelRatio;
+
+    minimap.height=
+        minimap.clientHeight *
+        devicePixelRatio;
 }
 
-addEventListener("resize",resize);
+addEventListener(
+    "resize",
+    resize
+);
+
 resize();
 
 
@@ -603,63 +1041,103 @@ resize();
 
 function hashString(str){
 
-    let h = 2166136261;
+    let h=2166136261;
 
     for(let i=0;i<str.length;i++){
+
         h ^= str.charCodeAt(i);
+
         h +=
-            (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);
+            (h<<1)+
+            (h<<4)+
+            (h<<7)+
+            (h<<8)+
+            (h<<24);
     }
 
-    return h >>> 0;
+    return h>>>0;
 }
 
 function RNG(seed){
 
-    let state = hashString(String(seed)) || 1;
+    let state=
+        hashString(String(seed)) || 1;
 
     return function(){
 
-        state += 0x6D2B79F5;
+        state +=
+            0x6D2B79F5;
 
-        let t = state;
+        let t=state;
 
-        t = Math.imul(t ^ t >>> 15,t | 1);
+        t=
+            Math.imul(
+                t^t>>>15,
+                t|1
+            );
 
-        t ^= t + Math.imul(
-            t ^ t >>> 7,
-            t | 61
-        );
+        t ^=
+            t+
+            Math.imul(
+                t^t>>>7,
+                t|61
+            );
 
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    }
-}
-
-let worldSeed = "VOID-829174";
-
-function randomRange(rng,a,b){
-    return a + rng()*(b-a);
+        return(
+            (t^t>>>14)>>>0
+        )/4294967296;
+    };
 }
 
 function pick(rng,array){
-    return array[Math.floor(rng()*array.length)];
+
+    return array[
+        Math.floor(
+            rng()*array.length
+        )
+    ];
 }
 
 
 /* ============================================================
-   WORLD DATA
+   WORLD
 ============================================================ */
 
-let world = null;
+let worldSeed="VOID-829174";
 
-let player = {
+const CHUNK_SIZE=5000;
+
+let currentChunk={
+    x:999999,
+    y:999999
+};
+
+let currentSystem=null;
+
+let structures=[];
+
+let stars=[];
+
+
+/* ============================================================
+   PLAYER
+============================================================ */
+
+let player={
+
     x:0,
     y:0,
 
     vx:0,
     vy:0,
 
+    // Current visual facing
     angle:0,
+
+    // Target facing
+    targetAngle:0,
+
+    rotationSpeed:.18,
 
     hull:100,
     maxHull:100,
@@ -697,37 +1175,34 @@ let player = {
     }
 };
 
-let gameRunning = false;
-let paused = false;
 
-let camera = {
+/* ============================================================
+   GAME STATE
+============================================================ */
+
+let gameRunning=false;
+let paused=false;
+
+let camera={
     x:0,
     y:0
 };
 
-let bullets = [];
-let enemyBullets = [];
-let enemies = [];
-let particles = [];
-let pickups = [];
-let structures = [];
-let stars = [];
+let bullets=[];
+let enemyBullets=[];
+let enemies=[];
+let particles=[];
+let pickups=[];
 
-let currentChunk = {
-    x:0,
-    y:0
-};
+let keys={};
 
-let currentSystem = null;
-
-let keys = {};
-let mouse = {
+let mouse={
     x:W/2,
     y:H/2,
     down:false
 };
 
-let mobile = {
+let mobile={
     x:0,
     y:0,
     fire:false,
@@ -736,22 +1211,28 @@ let mobile = {
 
 
 /* ============================================================
-   WORLD GENERATION
+   SECTOR GENERATOR
 ============================================================ */
 
 function sectorSeed(x,y){
-    return `${worldSeed}:sector:${x}:${y}`;
-}
 
-function systemSeed(x,y){
-    return `${worldSeed}:system:${x}:${y}`;
+    return (
+        worldSeed+
+        ":sector:"+
+        x+
+        ":"+
+        y
+    );
 }
 
 function generateSector(x,y){
 
-    const rng = RNG(sectorSeed(x,y));
+    const rng=
+        RNG(
+            sectorSeed(x,y)
+        );
 
-    const biomes = [
+    const biomes=[
         "deep_space",
         "asteroid_field",
         "nebula",
@@ -763,9 +1244,7 @@ function generateSector(x,y){
         "mining_zone"
     ];
 
-    const biome = pick(rng,biomes);
-
-    const starTypes = [
+    const starTypes=[
         "blue",
         "yellow",
         "red",
@@ -773,115 +1252,202 @@ function generateSector(x,y){
         "neutron"
     ];
 
-    let sector = {
-        x,
-        y,
-        biome,
+    const names=[
+        "Aster",
+        "Vega",
+        "Nox",
+        "Helios",
+        "Draconis",
+        "Kestrel",
+        "Orion",
+        "Nyx",
+        "Erebus",
+        "Solace"
+    ];
 
-        danger:Math.floor(randomRange(rng,1,11)),
+    const factions=[
+        "miners",
+        "federation",
+        "pirates",
+        "aliens",
+        "neutral"
+    ];
+
+    const specials=[
+        "distress_signal",
+        "ancient_signal",
+        "pirate_patrol",
+        "merchant_convoy",
+        "derelict",
+        "resource_rush",
+        "none"
+    ];
+
+    let sector={
+
+        x:x,
+        y:y,
+
+        biome:
+            pick(rng,biomes),
+
+        danger:
+            1+
+            Math.floor(
+                rng()*10
+            ),
 
         systemName:
-            pick(rng,[
-                "Aster",
-                "Vega",
-                "Nox",
-                "Helios",
-                "Draconis",
-                "Kestrel",
-                "Orion",
-                "Nyx",
-                "Erebus",
-                "Solace"
-            ]) + "-" +
-            Math.floor(rng()*999),
+            pick(rng,names)+
+            "-"+
+            Math.floor(
+                rng()*999
+            ),
 
-        star:pick(rng,starTypes),
+        star:
+            pick(rng,starTypes),
+
+        faction:
+            pick(rng,factions),
+
+        special:
+            pick(rng,specials),
 
         planets:[],
-
         structures:[],
-
-        resources:[],
-
-        faction:pick(rng,[
-            "miners",
-            "federation",
-            "pirates",
-            "aliens",
-            "neutral"
-        ]),
-
-        special:pick(rng,[
-            "distress_signal",
-            "ancient_signal",
-            "pirate_patrol",
-            "merchant_convoy",
-            "derelict",
-            "resource_rush",
-            "none"
-        ])
+        resources:[]
     };
 
-    let planetCount = 1 + Math.floor(rng()*6);
+
+    /* ========================================================
+       PLANETS
+    ======================================================== */
+
+    const planetTypes=[
+        "rocky",
+        "ice",
+        "gas",
+        "ocean",
+        "lava",
+        "dead"
+    ];
+
+    let planetCount=
+        1+
+        Math.floor(
+            rng()*6
+        );
 
     for(let i=0;i<planetCount;i++){
 
         sector.planets.push({
+
             name:
-                String.fromCharCode(65+i) +
-                "-" +
-                Math.floor(rng()*99),
+                String.fromCharCode(
+                    65+i
+                )+
+                "-"+
+                Math.floor(
+                    rng()*99
+                ),
 
-            type:pick(rng,[
-                "rocky",
-                "ice",
-                "gas",
-                "ocean",
-                "lava",
-                "dead"
-            ]),
+            type:
+                pick(
+                    rng,
+                    planetTypes
+                ),
 
-            radius:randomRange(rng,15,50),
-            orbit:randomRange(rng,180,700)
+            radius:
+                15+
+                rng()*35,
+
+            orbit:
+                180+
+                rng()*520
         });
     }
 
-    let structureCount = Math.floor(rng()*5);
+
+    /* ========================================================
+       STRUCTURES
+    ======================================================== */
+
+    const structureTypes=[
+        "station",
+        "wreck",
+        "mining_colony",
+        "pirate_base",
+        "alien_ruin",
+        "research_outpost"
+    ];
+
+    let structureCount=
+        Math.floor(
+            rng()*6
+        );
 
     for(let i=0;i<structureCount;i++){
 
         sector.structures.push({
-            type:pick(rng,[
-                "station",
-                "wreck",
-                "mining_colony",
-                "pirate_base",
-                "alien_ruin",
-                "research_outpost"
-            ]),
 
-            x:randomRange(rng,-1800,1800),
-            y:randomRange(rng,-1800,1800),
+            type:
+                pick(
+                    rng,
+                    structureTypes
+                ),
+
+            x:
+                -1800+
+                rng()*3600,
+
+            y:
+                -1800+
+                rng()*3600,
 
             visited:false
         });
     }
 
-    let resourceCount = 5 + Math.floor(rng()*15);
+
+    /* ========================================================
+       RESOURCES
+    ======================================================== */
+
+    const resourceTypes=[
+        "iron",
+        "crystal",
+        "alien"
+    ];
+
+    let resourceCount=
+        5+
+        Math.floor(
+            rng()*16
+        );
 
     for(let i=0;i<resourceCount;i++){
 
         sector.resources.push({
-            type:pick(rng,[
-                "iron",
-                "crystal",
-                "alien"
-            ]),
 
-            x:randomRange(rng,-2500,2500),
-            y:randomRange(rng,-2500,2500),
+            type:
+                pick(
+                    rng,
+                    resourceTypes
+                ),
 
-            amount:1+Math.floor(rng()*8)
+            x:
+                -2500+
+                rng()*5000,
+
+            y:
+                -2500+
+                rng()*5000,
+
+            amount:
+                1+
+                Math.floor(
+                    rng()*8
+                )
         });
     }
 
@@ -890,81 +1456,58 @@ function generateSector(x,y){
 
 
 /* ============================================================
-   STARFIELD
+   LOAD CHUNK
 ============================================================ */
 
-function buildStars(){
-
-    stars=[];
-
-    const rng=RNG(worldSeed+":stars");
-
-    for(let i=0;i<900;i++){
-
-        stars.push({
-            x:randomRange(rng,-10000,10000),
-            y:randomRange(rng,-10000,10000),
-            size:randomRange(rng,.4,2.5),
-            alpha:randomRange(rng,.25,1),
-            depth:randomRange(rng,.1,.8)
-        });
-    }
-}
-
-
-/* ============================================================
-   CHUNK LOADING
-============================================================ */
-
-const CHUNK_SIZE=5000;
-
-function chunkFromPosition(x,y){
-
-    return {
-        x:Math.floor(x/CHUNK_SIZE),
-        y:Math.floor(y/CHUNK_SIZE)
-    };
-}
-
-function loadChunk(cx,cy){
+function loadChunk(x,y){
 
     if(
-        currentChunk.x===cx &&
-        currentChunk.y===cy
+        currentChunk.x===x &&
+        currentChunk.y===y
     ){
         return;
     }
 
     currentChunk={
-        x:cx,
-        y:cy
+        x:x,
+        y:y
     };
 
-    currentSystem=generateSector(cx,cy);
+    currentSystem=
+        generateSector(
+            x,
+            y
+        );
 
-    structures =
-        currentSystem.structures.map(s=>({
-            ...s,
-            active:true
-        }));
+    structures=
+        currentSystem.structures.map(
+            s=>({...s})
+        );
 
-    showEvent(
-        `${currentSystem.systemName} • ${currentSystem.biome.replaceAll("_"," ").toUpperCase()}`
-    );
+    document.getElementById(
+        "sectorText"
+    ).textContent=
+        `${x} : ${y}`;
 
-    document.getElementById("sectorText").textContent=
-        `${cx} : ${cy}`;
-
-    document.getElementById("systemText").textContent=
+    document.getElementById(
+        "systemText"
+    ).textContent=
         currentSystem.systemName;
 
-    document.getElementById("objectiveText").textContent=
-        objectiveForSector(currentSystem);
+    document.getElementById(
+        "objectiveText"
+    ).textContent=
+        getObjective(
+            currentSystem
+        );
 
-    saveWorldState();
+    showEvent(
+        `${currentSystem.systemName} • `+
+        `${currentSystem.biome.replaceAll("_"," ").toUpperCase()}`
+    );
 }
 
-function objectiveForSector(s){
+function getObjective(s){
 
     if(s.special==="distress_signal")
         return "INVESTIGATE DISTRESS SIGNAL";
@@ -986,26 +1529,68 @@ function objectiveForSector(s){
 
 
 /* ============================================================
-   ENEMIES
+   STARS
+============================================================ */
+
+function buildStars(){
+
+    stars=[];
+
+    const rng=
+        RNG(
+            worldSeed+
+            ":stars"
+        );
+
+    for(let i=0;i<1000;i++){
+
+        stars.push({
+
+            x:
+                -10000+
+                rng()*20000,
+
+            y:
+                -10000+
+                rng()*20000,
+
+            size:
+                .4+
+                rng()*2,
+
+            alpha:
+                .2+
+                rng()*.8,
+
+            depth:
+                .1+
+                rng()*.8
+        });
+    }
+}
+
+
+/* ============================================================
+   ENEMY TYPES
 ============================================================ */
 
 const ENEMY_TYPES={
 
     scout:{
         hp:35,
-        speed:2.3,
-        size:13,
+        speed:2.4,
+        size:12,
         damage:8,
-        color:"#8aa9ff",
+        color:"#87aaff",
         score:20
     },
 
     fighter:{
         hp:70,
         speed:1.8,
-        size:18,
+        size:17,
         damage:12,
-        color:"#ff6570",
+        color:"#ff5967",
         score:40
     },
 
@@ -1014,80 +1599,82 @@ const ENEMY_TYPES={
         speed:3.1,
         size:14,
         damage:16,
-        color:"#ff9b55",
+        color:"#ff9c55",
         score:55
     },
 
-    tank:{
-        hp:260,
-        speed:.7,
-        size:32,
-        damage:25,
-        color:"#a55cff",
-        score:150
-    },
-
     sniper:{
-        hp:90,
+        hp:100,
         speed:.9,
         size:19,
-        damage:30,
-        color:"#ffdd67",
+        damage:28,
+        color:"#ffdc67",
         score:120
     },
 
     bomber:{
-        hp:130,
-        speed:1.1,
+        hp:140,
+        speed:1,
         size:23,
-        damage:40,
-        color:"#ff4d9d",
-        score:130
+        damage:35,
+        color:"#ff4d9e",
+        score:140
+    },
+
+    tank:{
+        hp:280,
+        speed:.65,
+        size:31,
+        damage:25,
+        color:"#a15cff",
+        score:180
     },
 
     swarm:{
-        hp:20,
-        speed:3.5,
-        size:9,
+        hp:22,
+        speed:3.6,
+        size:8,
         damage:6,
-        color:"#d9ff70",
+        color:"#d6ff70",
         score:15
     },
 
     elite:{
-        hp:450,
-        speed:1.5,
+        hp:500,
+        speed:1.4,
         size:38,
         damage:35,
-        color:"#ff38e8",
-        score:400
+        color:"#ff35e8",
+        score:500
     },
 
     guardian:{
-        hp:900,
-        speed:.8,
-        size:60,
+        hp:1100,
+        speed:.7,
+        size:62,
         damage:50,
-        color:"#66eaff",
-        score:1000
+        color:"#5fe8ff",
+        score:1500
     }
-
 };
+
+
+/* ============================================================
+   ENEMY GENERATION
+============================================================ */
 
 function chooseEnemy(){
 
-    const rng=RNG(
-        worldSeed+
-        ":"+
-        currentChunk.x+
-        ":"+
-        currentChunk.y+
-        ":enemy"
-    );
+    let danger=
+        currentSystem
+        ? currentSystem.danger
+        : 1;
 
-    let danger=currentSystem.danger;
-
-    let types=["scout","fighter","interceptor"];
+    let types=[
+        "scout",
+        "fighter",
+        "interceptor"
+    ];
 
     if(danger>=3)
         types.push("sniper");
@@ -1104,179 +1691,189 @@ function chooseEnemy(){
     if(danger>=8)
         types.push("elite");
 
-    return pick(rng,types);
+    return pick(
+        RNG(
+            worldSeed+
+            ":"+
+            currentChunk.x+
+            ":"+
+            currentChunk.y+
+            ":"+
+            Math.floor(
+                Math.random()*100000
+            )
+        ),
+        types
+    );
 }
 
 function spawnEnemy(type){
 
-    type=type || chooseEnemy();
+    type=
+        type ||
+        chooseEnemy();
 
-    const data=ENEMY_TYPES[type];
+    const d=
+        ENEMY_TYPES[type];
 
-    const a=Math.random()*Math.PI*2;
+    const a=
+        Math.random()*
+        Math.PI*2;
 
     const distance=
         Math.max(W,H)*.8+
-        Math.random()*600;
+        Math.random()*700;
 
     enemies.push({
 
-        type,
+        type:type,
 
-        x:player.x+Math.cos(a)*distance,
-        y:player.y+Math.sin(a)*distance,
+        x:
+            player.x+
+            Math.cos(a)*
+            distance,
+
+        y:
+            player.y+
+            Math.sin(a)*
+            distance,
 
         vx:0,
         vy:0,
 
-        hp:data.hp,
-        maxHp:data.hp,
+        hp:d.hp,
+        maxHp:d.hp,
 
-        shoot:Math.random()*100,
+        speed:d.speed,
+        size:d.size,
+        damage:d.damage,
 
-        phase:Math.random()*Math.PI*2,
+        color:d.color,
 
-        size:data.size,
-        speed:data.speed,
+        score:d.score,
 
-        damage:data.damage,
+        phase:
+            Math.random()*
+            Math.PI*2,
 
-        color:data.color,
-
-        score:data.score
+        shoot:
+            60+
+            Math.random()*120
     });
 }
 
 
 /* ============================================================
-   BOSSES
+   BOSS
 ============================================================ */
 
 function spawnBoss(){
 
-    const rng=RNG(
-        worldSeed+
-        ":boss:"+
-        currentChunk.x+
-        ":"+
-        currentChunk.y
-    );
+    const type=
+        Math.random()<.5
+        ?"guardian"
+        :"elite";
 
-    let bossType=pick(rng,[
-        "guardian",
-        "guardian",
-        "elite"
-    ]);
+    const d=
+        ENEMY_TYPES[type];
 
-    const d=ENEMY_TYPES[bossType];
+    let hp=
+        d.hp+
+        player.level*200;
 
     enemies.push({
 
-        type:bossType,
+        type:type,
 
         boss:true,
 
-        x:player.x+900,
-        y:player.y,
+        x:
+            player.x+
+            1000,
+
+        y:
+            player.y,
 
         vx:0,
         vy:0,
 
-        hp:d.hp+
-            player.level*180,
-
-        maxHp:d.hp+
-            player.level*180,
-
-        shoot:0,
-
-        phase:0,
-
-        size:d.size,
+        hp:hp,
+        maxHp:hp,
 
         speed:d.speed,
+        size:d.size,
 
         damage:d.damage,
 
         color:d.color,
 
-        score:d.score
+        score:d.score,
+
+        phase:0,
+
+        shoot:20
     });
 
-    showEvent("⚠ BOSS DETECTED ⚠");
+    showEvent(
+        "⚠ BOSS DETECTED ⚠"
+    );
 }
 
 
 /* ============================================================
-   PLAYER SHOOTING
+   PLAYER AIM
 ============================================================ */
 
-function shoot(){
+function updateAim(){
 
-    if(!gameRunning || paused)
-        return;
+    const worldMouseX=
+        camera.x+
+        mouse.x-
+        W/2;
 
-    if(player.energy<=0)
-        return;
+    const worldMouseY=
+        camera.y+
+        mouse.y-
+        H/2;
 
-    let rate=1;
-
-    if(player.weapon==="laser")
-        rate=0.35;
-
-    if(player.weapon==="spread")
-        rate=1.2;
-
-    player.energy-=rate;
-
-    const a=player.angle;
-
-    if(player.weapon==="spread"){
-
-        [-.25,0,.25].forEach(offset=>{
-
-            createBullet(
-                a+offset,
-                11,
-                9,
-                16
-            );
-
-        });
-
-    }else{
-
-        createBullet(
-            a,
-            player.weapon==="plasma"?14:12,
-            player.weapon==="laser"?25:12,
-            player.weapon==="missile"?25:10
+    player.targetAngle=
+        Math.atan2(
+            worldMouseY-player.y,
+            worldMouseX-player.x
         );
-    }
 
-    createMuzzle();
-}
+    let difference=
+        player.targetAngle-
+        player.angle;
 
-function createBullet(angle,speed,damage,size){
+    while(
+        difference >
+        Math.PI
+    )
+        difference-=
+            Math.PI*2;
 
-    bullets.push({
+    while(
+        difference <
+        -Math.PI
+    )
+        difference+=
+            Math.PI*2;
 
-        x:player.x+Math.cos(angle)*25,
-        y:player.y+Math.sin(angle)*25,
+    /*
+       Smooth spaceship rotation.
+       The ship now physically turns toward
+       the mouse instead of instantly snapping.
+    */
 
-        vx:Math.cos(angle)*speed,
-        vy:Math.sin(angle)*speed,
-
-        damage,
-        size,
-
-        life:100
-    });
+    player.angle +=
+        difference *
+        player.rotationSpeed;
 }
 
 
 /* ============================================================
-   UPDATE PLAYER
+   PLAYER UPDATE
 ============================================================ */
 
 function updatePlayer(){
@@ -1284,81 +1881,125 @@ function updatePlayer(){
     let dx=0;
     let dy=0;
 
-    if(keys["w"]||keys["arrowup"])dy--;
-    if(keys["s"]||keys["arrowdown"])dy++;
-    if(keys["a"]||keys["arrowleft"])dx--;
-    if(keys["d"]||keys["arrowright"])dx++;
+    if(
+        keys["w"] ||
+        keys["arrowup"]
+    )
+        dy--;
+
+    if(
+        keys["s"] ||
+        keys["arrowdown"]
+    )
+        dy++;
+
+    if(
+        keys["a"] ||
+        keys["arrowleft"]
+    )
+        dx--;
+
+    if(
+        keys["d"] ||
+        keys["arrowright"]
+    )
+        dx++;
 
     dx+=mobile.x;
     dy+=mobile.y;
 
-    let len=Math.hypot(dx,dy);
+    let len=
+        Math.hypot(dx,dy);
 
     if(len>1){
+
         dx/=len;
         dy/=len;
     }
 
-    let boost=
-        keys["shift"]||
+    let boosting=
+        keys["shift"] ||
         mobile.boost;
 
     let acceleration=
-        boost?0.55:0.28;
+        boosting
+        ? .55
+        : .28;
 
     let maxSpeed=
-        boost?11:6;
+        boosting
+        ? 11
+        : 6;
 
-    player.vx+=dx*acceleration;
-    player.vy+=dy*acceleration;
+    player.vx+=
+        dx*
+        acceleration;
+
+    player.vy+=
+        dy*
+        acceleration;
 
     player.vx*=.94;
     player.vy*=.94;
 
-    let speed=Math.hypot(
-        player.vx,
-        player.vy
-    );
+    let speed=
+        Math.hypot(
+            player.vx,
+            player.vy
+        );
 
     if(speed>maxSpeed){
 
         player.vx=
-            player.vx/speed*maxSpeed;
+            player.vx/
+            speed*
+            maxSpeed;
 
         player.vy=
-            player.vy/speed*maxSpeed;
+            player.vy/
+            speed*
+            maxSpeed;
     }
 
     player.x+=player.vx;
     player.y+=player.vy;
 
-    if(mouse.x!==null){
 
-        const worldMouseX=
-            camera.x+
-            mouse.x;
+    // IMPORTANT:
+    // Ship rotates independently from movement.
 
-        const worldMouseY=
-            camera.y+
-            mouse.y;
+    updateAim();
 
-        player.angle=
-            Math.atan2(
-                worldMouseY-player.y,
-                worldMouseX-player.x
-            );
-    }
 
-    if(mouse.down || keys[" "] || mobile.fire)
+    // Fire
+
+    if(
+        mouse.down ||
+        keys[" "] ||
+        mobile.fire
+    )
         shoot();
 
-    player.energy=Math.min(
-        player.maxEnergy,
-        player.energy+.4
-    );
 
-    if(player.shield<player.maxShield)
+    // Energy
+
+    player.energy=
+        Math.min(
+            player.maxEnergy,
+            player.energy+.35
+        );
+
+
+    // Shield recharge
+
+    if(
+        player.shield<
+        player.maxShield
+    )
         player.shield+=.035;
+
+
+    // Chunk
 
     let chunk=
         chunkFromPosition(
@@ -1366,24 +2007,180 @@ function updatePlayer(){
             player.y
         );
 
-    loadChunk(chunk.x,chunk.y);
+    loadChunk(
+        chunk.x,
+        chunk.y
+    );
 }
 
 
 /* ============================================================
-   UPDATE ENEMIES
+   CHUNK COORDINATES
+============================================================ */
+
+function chunkFromPosition(x,y){
+
+    return {
+
+        x:
+            Math.floor(
+                x/CHUNK_SIZE
+            ),
+
+        y:
+            Math.floor(
+                y/CHUNK_SIZE
+            )
+    };
+}
+
+
+/* ============================================================
+   SHOOTING
+============================================================ */
+
+function shoot(){
+
+    if(
+        !gameRunning ||
+        paused
+    )
+        return;
+
+    if(player.energy<=0)
+        return;
+
+    let angle=
+        player.angle;
+
+    if(
+        player.weapon===
+        "spread"
+    ){
+
+        player.energy-=1.5;
+
+        [-.28,0,.28].forEach(
+            offset=>{
+
+                createBullet(
+                    angle+offset,
+                    11,
+                    12,
+                    4
+                );
+            }
+        );
+
+    }else{
+
+        let cost=1;
+
+        let speed=12;
+
+        let damage=12;
+
+        let size=4;
+
+        if(player.weapon==="laser"){
+
+            cost=.7;
+            speed=18;
+            damage=18;
+            size=3;
+        }
+
+        if(player.weapon==="missile"){
+
+            cost=4;
+            speed=7;
+            damage=35;
+            size=7;
+        }
+
+        if(player.weapon==="plasma"){
+
+            cost=3;
+            speed=9;
+            damage=30;
+            size=8;
+        }
+
+        player.energy-=cost;
+
+        createBullet(
+            angle,
+            speed,
+            damage,
+            size
+        );
+    }
+
+    createMuzzle();
+}
+
+function createBullet(
+    angle,
+    speed,
+    damage,
+    size
+){
+
+    bullets.push({
+
+        x:
+            player.x+
+            Math.cos(angle)*
+            32,
+
+        y:
+            player.y+
+            Math.sin(angle)*
+            32,
+
+        vx:
+            Math.cos(angle)*
+            speed,
+
+        vy:
+            Math.sin(angle)*
+            speed,
+
+        damage:damage,
+
+        size:size,
+
+        life:120
+    });
+}
+
+
+/* ============================================================
+   ENEMY UPDATE
 ============================================================ */
 
 function updateEnemies(){
 
-    for(let i=enemies.length-1;i>=0;i--){
+    for(
+        let i=enemies.length-1;
+        i>=0;
+        i--
+    ){
 
-        const e=enemies[i];
+        const e=
+            enemies[i];
 
-        let dx=player.x-e.x;
-        let dy=player.y-e.y;
+        let dx=
+            player.x-
+            e.x;
 
-        let dist=Math.hypot(dx,dy)||1;
+        let dy=
+            player.y-
+            e.y;
+
+        let dist=
+            Math.hypot(dx,dy) ||
+            1;
 
         let nx=dx/dist;
         let ny=dy/dist;
@@ -1391,15 +2188,25 @@ function updateEnemies(){
         e.phase+=.03;
 
         let strafe=
-            Math.sin(e.phase)*.8;
+            Math.sin(
+                e.phase
+            );
 
         e.vx+=
-            nx*e.speed*.035+
-            -ny*strafe*.025;
+            nx*
+            e.speed*
+            .035+
+            -ny*
+            strafe*
+            .025;
 
         e.vy+=
-            ny*e.speed*.035+
-            nx*strafe*.025;
+            ny*
+            e.speed*
+            .035+
+            nx*
+            strafe*
+            .025;
 
         e.vx*=.96;
         e.vy*=.96;
@@ -1414,62 +2221,98 @@ function updateEnemies(){
             enemyShoot(e);
 
             e.shoot=
-                e.boss?
-                35:
-                80+Math.random()*100;
+                e.boss
+                ? 35
+                : 80+
+                  Math.random()*100;
         }
 
-        if(dist<e.size+22){
+        if(
+            dist<
+            e.size+20
+        ){
 
-            damagePlayer(e.damage*.02);
-
-            e.x-=nx*3;
-            e.y-=ny*3;
+            damagePlayer(
+                e.damage*.025
+            );
         }
 
         if(e.hp<=0){
 
-            destroyEnemy(i,e);
+            destroyEnemy(
+                i,
+                e
+            );
         }
     }
 
-    // Automatically create encounters based on world state.
+
+    /*
+       Procedural ambient encounters.
+       There is no traditional Wave 1/2/3 loop.
+    */
+
     if(enemies.length<2){
 
         let chance=
-            .002+
-            currentSystem.danger*.0007;
+            .0015+
+            (
+                currentSystem
+                ?currentSystem.danger
+                :1
+            )*.0008;
 
-        if(Math.random()<chance)
+        if(
+            Math.random()<
+            chance
+        )
             spawnEnemy();
     }
 }
 
+
+/* ============================================================
+   ENEMY SHOOTING
+============================================================ */
+
 function enemyShoot(e){
 
-    let angle=Math.atan2(
-        player.y-e.y,
-        player.x-e.x
-    );
+    let angle=
+        Math.atan2(
+            player.y-e.y,
+            player.x-e.x
+        );
 
     if(e.boss){
 
-        for(let i=0;i<5;i++){
+        for(
+            let i=0;
+            i<7;
+            i++
+        ){
 
             let a=
                 angle+
-                (i-2)*.18;
+                (
+                    i-3
+                )*.15;
 
             enemyBullets.push({
+
                 x:e.x,
                 y:e.y,
 
-                vx:Math.cos(a)*5,
-                vy:Math.sin(a)*5,
+                vx:
+                    Math.cos(a)*5,
 
-                damage:12,
+                vy:
+                    Math.sin(a)*5,
+
+                damage:13,
+
                 size:6,
-                life:180
+
+                life:200
             });
         }
 
@@ -1480,13 +2323,145 @@ function enemyShoot(e){
             x:e.x,
             y:e.y,
 
-            vx:Math.cos(angle)*4,
-            vy:Math.sin(angle)*4,
+            vx:
+                Math.cos(angle)*4,
+
+            vy:
+                Math.sin(angle)*4,
 
             damage:e.damage,
+
             size:4,
+
             life:180
         });
+    }
+}
+
+
+/* ============================================================
+   BULLETS
+============================================================ */
+
+function updateBullets(){
+
+    for(
+        let i=bullets.length-1;
+        i>=0;
+        i--
+    ){
+
+        const b=
+            bullets[i];
+
+        b.x+=b.vx;
+        b.y+=b.vy;
+
+        b.life--;
+
+        let hit=false;
+
+        for(
+            let j=enemies.length-1;
+            j>=0;
+            j--
+        ){
+
+            const e=
+                enemies[j];
+
+            if(
+                Math.hypot(
+                    b.x-e.x,
+                    b.y-e.y
+                )<
+                b.size+
+                e.size
+            ){
+
+                e.hp-=
+                    b.damage;
+
+                explosion(
+                    b.x,
+                    b.y,
+                    "#ffffff",
+                    3
+                );
+
+                hit=true;
+
+                if(e.hp<=0)
+                    destroyEnemy(
+                        j,
+                        e
+                    );
+
+                break;
+            }
+        }
+
+        if(
+            hit ||
+            b.life<=0
+        )
+            bullets.splice(
+                i,
+                1
+            );
+    }
+}
+
+function updateEnemyBullets(){
+
+    for(
+        let i=
+            enemyBullets.length-1;
+        i>=0;
+        i--
+    ){
+
+        const b=
+            enemyBullets[i];
+
+        b.x+=b.vx;
+        b.y+=b.vy;
+
+        b.life--;
+
+        if(
+            Math.hypot(
+                b.x-player.x,
+                b.y-player.y
+            )<
+            b.size+17
+        ){
+
+            damagePlayer(
+                b.damage
+            );
+
+            explosion(
+                b.x,
+                b.y,
+                "#ff5868",
+                5
+            );
+
+            enemyBullets.splice(
+                i,
+                1
+            );
+
+        }else if(
+            b.life<=0
+        ){
+
+            enemyBullets.splice(
+                i,
+                1
+            );
+        }
     }
 }
 
@@ -1508,8 +2483,11 @@ function damagePlayer(amount){
                 amount
             );
 
-        player.shield-=absorbed;
-        amount-=absorbed;
+        player.shield-=
+            absorbed;
+
+        amount-=
+            absorbed;
     }
 
     player.hull-=amount;
@@ -1527,13 +2505,20 @@ function damagePlayer(amount){
    ENEMY DESTRUCTION
 ============================================================ */
 
-function destroyEnemy(index,e){
+function destroyEnemy(
+    index,
+    e
+){
 
-    enemies.splice(index,1);
+    enemies.splice(
+        index,
+        1
+    );
 
     player.kills++;
 
-    player.xp+=e.score/2;
+    player.xp+=
+        e.score*.5;
 
     player.credits+=
         Math.floor(
@@ -1545,10 +2530,12 @@ function destroyEnemy(index,e){
         e.x,
         e.y,
         e.color,
-        e.boss?60:20
+        e.boss?80:25
     );
 
-    if(Math.random()<.25){
+    if(
+        Math.random()<.25
+    ){
 
         pickups.push({
 
@@ -1556,10 +2543,19 @@ function destroyEnemy(index,e){
             y:e.y,
 
             type:
-                Math.random()<.5?
-                "shield":
-                "energy"
+                Math.random()<.5
+                ?"shield"
+                :"energy"
         });
+    }
+
+    if(e.boss){
+
+        showEvent(
+            "BOSS DESTROYED"
+        );
+
+        player.credits+=1000;
     }
 
     checkLevel();
@@ -1567,130 +2563,53 @@ function destroyEnemy(index,e){
 
 
 /* ============================================================
-   LEVEL SYSTEM
+   LEVEL
 ============================================================ */
 
 function checkLevel(){
 
-    let needed=
+    let required=
         100+
-        (player.level-1)*100;
+        (
+            player.level-1
+        )*100;
 
-    while(player.xp>=needed){
+    while(
+        player.xp>=required
+    ){
 
-        player.xp-=needed;
+        player.xp-=
+            required;
 
         player.level++;
 
         player.maxHull+=10;
-        player.hull=player.maxHull;
+        player.hull=
+            player.maxHull;
 
         player.maxShield+=10;
-        player.shield=player.maxShield;
+        player.shield=
+            player.maxShield;
+
+        player.maxEnergy+=5;
+        player.energy=
+            player.maxEnergy;
 
         showEvent(
             "LEVEL UP • SHIP UPGRADED"
         );
 
-        needed=
+        required=
             100+
-            (player.level-1)*100;
+            (
+                player.level-1
+            )*100;
     }
 }
 
 
 /* ============================================================
-   BULLETS
-============================================================ */
-
-function updateBullets(){
-
-    for(let i=bullets.length-1;i>=0;i--){
-
-        const b=bullets[i];
-
-        b.x+=b.vx;
-        b.y+=b.vy;
-
-        b.life--;
-
-        let hit=false;
-
-        for(let j=enemies.length-1;j>=0;j--){
-
-            const e=enemies[j];
-
-            if(
-                Math.hypot(
-                    b.x-e.x,
-                    b.y-e.y
-                )<
-                b.size+e.size
-            ){
-
-                e.hp-=b.damage;
-
-                explosion(
-                    b.x,
-                    b.y,
-                    "#ffffff",
-                    3
-                );
-
-                hit=true;
-
-                if(e.hp<=0)
-                    destroyEnemy(j,e);
-
-                break;
-            }
-        }
-
-        if(hit || b.life<=0)
-            bullets.splice(i,1);
-    }
-}
-
-function updateEnemyBullets(){
-
-    for(let i=enemyBullets.length-1;i>=0;i--){
-
-        const b=enemyBullets[i];
-
-        b.x+=b.vx;
-        b.y+=b.vy;
-
-        b.life--;
-
-        if(
-            Math.hypot(
-                b.x-player.x,
-                b.y-player.y
-            )<
-            b.size+16
-        ){
-
-            damagePlayer(b.damage);
-
-            explosion(
-                b.x,
-                b.y,
-                "#ff5965",
-                5
-            );
-
-            enemyBullets.splice(i,1);
-
-        }else if(b.life<=0){
-
-            enemyBullets.splice(i,1);
-        }
-    }
-}
-
-
-/* ============================================================
-   RESOURCES / PICKUPS
+   RESOURCES
 ============================================================ */
 
 function updateResources(){
@@ -1698,72 +2617,48 @@ function updateResources(){
     if(!currentSystem)
         return;
 
-    for(const r of currentSystem.resources){
+    for(
+        let i=
+            currentSystem.resources.length-1;
+        i>=0;
+        i--
+    ){
 
-        let dx=r.x+
-            currentChunk.x*CHUNK_SIZE-
-            player.x;
+        const r=
+            currentSystem.resources[i];
 
-        let dy=r.y+
-            currentChunk.y*CHUNK_SIZE-
-            player.y;
+        let rx=
+            r.x+
+            currentChunk.x*
+            CHUNK_SIZE;
 
-        if(Math.hypot(dx,dy)<35){
+        let ry=
+            r.y+
+            currentChunk.y*
+            CHUNK_SIZE;
 
-            player.inventory[r.type]+=r.amount;
-
-            r.amount=0;
-
-            showEvent(
-                `COLLECTED ${r.type.toUpperCase()}`
-            );
-        }
-    }
-
-    currentSystem.resources=
-        currentSystem.resources.filter(
-            r=>r.amount>0
-        );
-}
-
-function updatePickups(){
-
-    for(let i=pickups.length-1;i>=0;i--){
-
-        let p=pickups[i];
-
-        let dx=player.x-p.x;
-        let dy=player.y-p.y;
-
-        let d=Math.hypot(dx,dy)||1;
-
-        if(d<120){
-
-            p.x+=dx/d*2;
-            p.y+=dy/d*2;
-        }
-
-        if(d<25){
-
-            if(p.type==="shield")
-                player.shield=
-                    Math.min(
-                        player.maxShield,
-                        player.shield+40
-                    );
-
-            if(p.type==="energy")
-                player.energy=
-                    Math.min(
-                        player.maxEnergy,
-                        player.energy+50
-                    );
-
-            showEvent(
-                p.type.toUpperCase()+" RECOVERED"
+        let d=
+            Math.hypot(
+                rx-player.x,
+                ry-player.y
             );
 
-            pickups.splice(i,1);
+        if(d<35){
+
+            player.inventory[
+                r.type
+            ]+=r.amount;
+
+            showEvent(
+                `COLLECTED ${
+                    r.type.toUpperCase()
+                } × ${r.amount}`
+            );
+
+            currentSystem.resources.splice(
+                i,
+                1
+            );
         }
     }
 }
@@ -1775,15 +2670,19 @@ function updatePickups(){
 
 function updateStructures(){
 
-    for(const s of structures){
+    for(
+        const s of structures
+    ){
 
         let sx=
             s.x+
-            currentChunk.x*CHUNK_SIZE;
+            currentChunk.x*
+            CHUNK_SIZE;
 
         let sy=
             s.y+
-            currentChunk.y*CHUNK_SIZE;
+            currentChunk.y*
+            CHUNK_SIZE;
 
         let d=
             Math.hypot(
@@ -1791,11 +2690,16 @@ function updateStructures(){
                 sy-player.y
             );
 
-        if(d<100 && !s.visited){
+        if(
+            d<110 &&
+            !s.visited
+        ){
 
             s.visited=true;
 
-            discoverStructure(s);
+            discoverStructure(
+                s
+            );
         }
     }
 }
@@ -1804,59 +2708,142 @@ function discoverStructure(s){
 
     let text="";
 
-    if(s.type==="station"){
+    switch(s.type){
 
-        player.credits+=100;
+        case "station":
 
-        text=
-            "SPACE STATION DISCOVERED • +100 CREDITS";
+            player.credits+=100;
+
+            text=
+                "SPACE STATION DISCOVERED • +100 CREDITS";
+
+            break;
+
+        case "wreck":
+
+            player.inventory.iron+=5;
+
+            text=
+                "WRECK SALVAGED • +5 IRON";
+
+            break;
+
+        case "mining_colony":
+
+            player.reputation.miners+=5;
+
+            text=
+                "MINING COLONY DISCOVERED • MINER REP +5";
+
+            break;
+
+        case "pirate_base":
+
+            player.reputation.pirates-=5;
+
+            text=
+                "PIRATE BASE • HOSTILE TERRITORY";
+
+            break;
+
+        case "alien_ruin":
+
+            player.inventory.alien+=3;
+
+            player.reputation.aliens+=5;
+
+            text=
+                "ANCIENT ALIEN RUINS DISCOVERED";
+
+            break;
+
+        default:
+
+            text=
+                "RESEARCH OUTPOST DISCOVERED";
     }
-
-    else if(s.type==="wreck"){
-
-        player.inventory.iron+=5;
-
-        text=
-            "WRECK FOUND • SALVAGED MATERIALS";
-    }
-
-    else if(s.type==="mining_colony"){
-
-        player.reputation.miners+=5;
-
-        text=
-            "MINING COLONY • MINER REPUTATION +5";
-    }
-
-    else if(s.type==="pirate_base"){
-
-        player.reputation.pirates-=5;
-
-        text=
-            "PIRATE BASE • HOSTILE ACTIVITY";
-    }
-
-    else if(s.type==="alien_ruin"){
-
-        player.inventory.alien+=2;
-
-        player.reputation.aliens+=3;
-
-        text=
-            "ANCIENT ALIEN RUINS DISCOVERED";
-    }
-
-    else{
-
-        text=
-            "RESEARCH OUTPOST DISCOVERED";
-    }
-
-    showEvent(text);
 
     player.discovered.push(
-        `${currentChunk.x}:${currentChunk.y}:${s.type}`
+        `${currentChunk.x}:`+
+        `${currentChunk.y}:`+
+        `${s.type}`
     );
+
+    showEvent(text);
+}
+
+
+/* ============================================================
+   PICKUPS
+============================================================ */
+
+function updatePickups(){
+
+    for(
+        let i=pickups.length-1;
+        i>=0;
+        i--
+    ){
+
+        const p=
+            pickups[i];
+
+        let dx=
+            player.x-p.x;
+
+        let dy=
+            player.y-p.y;
+
+        let d=
+            Math.hypot(
+                dx,
+                dy
+            )||1;
+
+        if(d<120){
+
+            p.x+=
+                dx/d*2;
+
+            p.y+=
+                dy/d*2;
+        }
+
+        if(d<25){
+
+            if(
+                p.type==="shield"
+            ){
+
+                player.shield=
+                    Math.min(
+                        player.maxShield,
+                        player.shield+40
+                    );
+            }
+
+            if(
+                p.type==="energy"
+            ){
+
+                player.energy=
+                    Math.min(
+                        player.maxEnergy,
+                        player.energy+50
+                    );
+            }
+
+            showEvent(
+                p.type.toUpperCase()+
+                " RECOVERED"
+            );
+
+            pickups.splice(
+                i,
+                1
+            );
+        }
+    }
 }
 
 
@@ -1864,26 +2851,49 @@ function discoverStructure(s){
    PARTICLES
 ============================================================ */
 
-function explosion(x,y,color,count){
+function explosion(
+    x,
+    y,
+    color,
+    count
+){
 
-    for(let i=0;i<count;i++){
+    for(
+        let i=0;
+        i<count;
+        i++
+    ){
 
-        let a=Math.random()*Math.PI*2;
-        let speed=Math.random()*6+1;
+        let a=
+            Math.random()*
+            Math.PI*2;
+
+        let speed=
+            1+
+            Math.random()*6;
 
         particles.push({
 
-            x,
-            y,
+            x:x,
+            y:y,
 
-            vx:Math.cos(a)*speed,
-            vy:Math.sin(a)*speed,
+            vx:
+                Math.cos(a)*
+                speed,
 
-            life:30+Math.random()*30,
+            vy:
+                Math.sin(a)*
+                speed,
 
-            size:Math.random()*4+1,
+            life:
+                25+
+                Math.random()*40,
 
-            color
+            size:
+                1+
+                Math.random()*4,
+
+            color:color
         });
     }
 }
@@ -1891,22 +2901,33 @@ function explosion(x,y,color,count){
 function createMuzzle(){
 
     explosion(
+
         player.x+
-        Math.cos(player.angle)*25,
+        Math.cos(
+            player.angle
+        )*30,
 
         player.y+
-        Math.sin(player.angle)*25,
+        Math.sin(
+            player.angle
+        )*30,
 
         "#b8d6ff",
+
         4
     );
 }
 
 function updateParticles(){
 
-    for(let i=particles.length-1;i>=0;i--){
+    for(
+        let i=particles.length-1;
+        i>=0;
+        i--
+    ){
 
-        let p=particles[i];
+        const p=
+            particles[i];
 
         p.x+=p.vx;
         p.y+=p.vy;
@@ -1917,42 +2938,102 @@ function updateParticles(){
         p.life--;
 
         if(p.life<=0)
-            particles.splice(i,1);
+            particles.splice(
+                i,
+                1
+            );
     }
 }
 
 
 /* ============================================================
-   DRAW
+   CAMERA
 ============================================================ */
 
-function worldToScreen(x,y){
+function updateCamera(){
+
+    camera.x+=
+        (
+            player.x-
+            camera.x
+        )*.12;
+
+    camera.y+=
+        (
+            player.y-
+            camera.y
+        )*.12;
+}
+
+
+/* ============================================================
+   WORLD -> SCREEN
+============================================================ */
+
+function worldToScreen(
+    x,
+    y
+){
 
     return {
-        x:x-camera.x+W/2,
-        y:y-camera.y+H/2
+
+        x:
+            x-
+            camera.x+
+            W/2,
+
+        y:
+            y-
+            camera.y+
+            H/2
     };
 }
+
+
+/* ============================================================
+   DRAW BACKGROUND
+============================================================ */
 
 function drawBackground(){
 
     ctx.fillStyle="#02030a";
-    ctx.fillRect(0,0,W,H);
 
-    for(const s of stars){
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    for(
+        const s of stars
+    ){
 
         let x=
-            (s.x-camera.x*s.depth)%W;
+            (
+                s.x-
+                camera.x*
+                s.depth
+            )%W;
 
         let y=
-            (s.y-camera.y*s.depth)%H;
+            (
+                s.y-
+                camera.y*
+                s.depth
+            )%H;
 
-        if(x<0)x+=W;
-        if(y<0)y+=H;
+        if(x<0)
+            x+=W;
 
-        ctx.globalAlpha=s.alpha;
+        if(y<0)
+            y+=H;
 
-        ctx.fillStyle="#dce7ff";
+        ctx.globalAlpha=
+            s.alpha;
+
+        ctx.fillStyle=
+            "#dce7ff";
 
         ctx.beginPath();
 
@@ -1977,9 +3058,12 @@ function drawBiome(){
     if(!currentSystem)
         return;
 
-    if(currentSystem.biome==="nebula"){
+    if(
+        currentSystem.biome===
+        "nebula"
+    ){
 
-        let g=
+        let gradient=
             ctx.createRadialGradient(
                 W*.7,
                 H*.3,
@@ -1989,43 +3073,191 @@ function drawBiome(){
                 W*.7
             );
 
-        g.addColorStop(0,"rgba(80,40,160,.12)");
-        g.addColorStop(1,"rgba(0,0,0,0)");
+        gradient.addColorStop(
+            0,
+            "rgba(100,50,190,.14)"
+        );
 
-        ctx.fillStyle=g;
-        ctx.fillRect(0,0,W,H);
+        gradient.addColorStop(
+            1,
+            "rgba(0,0,0,0)"
+        );
+
+        ctx.fillStyle=
+            gradient;
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
     }
 
-    if(currentSystem.biome==="asteroid_field"){
+    if(
+        currentSystem.biome===
+        "gravity_rift"
+    ){
 
-        for(let i=0;i<50;i++){
+        ctx.strokeStyle=
+            "rgba(100,180,255,.08)";
 
-            let x=
-                ((i*743-camera.x*.2)%W+W)%W;
-
-            let y=
-                ((i*421-camera.y*.2)%H+H)%H;
-
-            ctx.fillStyle="rgba(130,130,145,.3)";
+        for(
+            let i=0;
+            i<20;
+            i++
+        ){
 
             ctx.beginPath();
 
             ctx.arc(
-                x,
-                y,
-                2+(i%5),
+                W/2,
+                H/2,
+                100+i*50+
+                Math.sin(
+                    performance.now()*.001+i
+                )*15,
                 0,
                 Math.PI*2
             );
 
-            ctx.fill();
+            ctx.stroke();
         }
     }
 }
 
+
+/* ============================================================
+   DRAW STRUCTURES
+============================================================ */
+
+function drawStructures(){
+
+    if(!currentSystem)
+        return;
+
+    for(
+        const s of structures
+    ){
+
+        let x=
+            s.x+
+            currentChunk.x*
+            CHUNK_SIZE;
+
+        let y=
+            s.y+
+            currentChunk.y*
+            CHUNK_SIZE;
+
+        let p=
+            worldToScreen(
+                x,
+                y
+            );
+
+        if(
+            p.x<-100 ||
+            p.x>W+100 ||
+            p.y<-100 ||
+            p.y>H+100
+        )
+            continue;
+
+        ctx.save();
+
+        ctx.translate(
+            p.x,
+            p.y
+        );
+
+        ctx.fillStyle=
+            s.visited
+            ?"rgba(100,110,140,.4)"
+            :"#728cff";
+
+        ctx.strokeStyle=
+            "#b8c8ff";
+
+        ctx.lineWidth=1.5;
+
+        if(
+            s.type===
+            "station"
+        ){
+
+            ctx.fillRect(
+                -30,
+                -18,
+                60,
+                36
+            );
+
+            ctx.strokeRect(
+                -30,
+                -18,
+                60,
+                36
+            );
+
+        }else if(
+            s.type===
+            "wreck"
+        ){
+
+            ctx.rotate(.4);
+
+            ctx.fillRect(
+                -25,
+                -9,
+                50,
+                18
+            );
+
+            ctx.strokeRect(
+                -25,
+                -9,
+                50,
+                18
+            );
+
+        }else{
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                0,
+                -25
+            );
+
+            ctx.lineTo(
+                25,
+                20
+            );
+
+            ctx.lineTo(
+                -25,
+                20
+            );
+
+            ctx.closePath();
+
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+}
+
+
+/* ============================================================
+   DRAW PLAYER
+============================================================ */
+
 function drawPlayer(){
 
-    let s=
+    const s=
         worldToScreen(
             player.x,
             player.y
@@ -2033,50 +3265,288 @@ function drawPlayer(){
 
     ctx.save();
 
-    ctx.translate(s.x,s.y);
-    ctx.rotate(player.angle);
+    ctx.translate(
+        s.x,
+        s.y
+    );
+
+    /*
+       THIS IS THE SHIP ROTATION.
+
+       player.angle is continuously updated
+       toward the mouse position.
+    */
+
+    ctx.rotate(
+        player.angle
+    );
+
+
+    /* ========================================================
+       ENGINE FLAME
+    ======================================================== */
+
+    let moving=
+        Math.hypot(
+            player.vx,
+            player.vy
+        )>.35;
+
+    if(moving){
+
+        let boosting=
+            keys["shift"] ||
+            mobile.boost;
+
+        let flameLength=
+            boosting
+            ?42
+            :25;
+
+        let pulse=
+            Math.sin(
+                performance.now()*.03
+            )*4;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            -10,
+            0
+        );
+
+        ctx.lineTo(
+            -flameLength-pulse,
+            -7
+        );
+
+        ctx.lineTo(
+            -flameLength-pulse,
+            7
+        );
+
+        ctx.closePath();
+
+        ctx.fillStyle=
+            boosting
+            ?"white"
+            :"#65aaff";
+
+        ctx.shadowBlur=
+            boosting
+            ?25
+            :15;
+
+        ctx.shadowColor=
+            "#66aaff";
+
+        ctx.fill();
+
+        ctx.shadowBlur=0;
+    }
+
+
+    /* ========================================================
+       SHIP MAIN BODY
+    ======================================================== */
 
     ctx.beginPath();
 
-    ctx.moveTo(25,0);
-    ctx.lineTo(-18,-13);
-    ctx.lineTo(-10,0);
-    ctx.lineTo(-18,13);
+    ctx.moveTo(
+        32,
+        0
+    );
+
+    ctx.lineTo(
+        7,
+        -11
+    );
+
+    ctx.lineTo(
+        -13,
+        -17
+    );
+
+    ctx.lineTo(
+        -9,
+        0
+    );
+
+    ctx.lineTo(
+        -13,
+        17
+    );
+
+    ctx.lineTo(
+        7,
+        11
+    );
+
     ctx.closePath();
 
-    ctx.fillStyle="#dce7ff";
+    ctx.fillStyle=
+        "#e1eaff";
+
     ctx.fill();
 
-    ctx.strokeStyle="#6ea1ff";
+    ctx.strokeStyle=
+        "#78a8ff";
+
     ctx.lineWidth=2;
+
     ctx.stroke();
 
-    if(player.shield>0){
+
+    /* ========================================================
+       UPPER WING
+    ======================================================== */
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        -8
+    );
+
+    ctx.lineTo(
+        -17,
+        -25
+    );
+
+    ctx.lineTo(
+        -22,
+        -18
+    );
+
+    ctx.lineTo(
+        -10,
+        -3
+    );
+
+    ctx.closePath();
+
+    ctx.fillStyle=
+        "#718ab5";
+
+    ctx.fill();
+
+
+    /* ========================================================
+       LOWER WING
+    ======================================================== */
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        8
+    );
+
+    ctx.lineTo(
+        -17,
+        25
+    );
+
+    ctx.lineTo(
+        -22,
+        18
+    );
+
+    ctx.lineTo(
+        -10,
+        3
+    );
+
+    ctx.closePath();
+
+    ctx.fillStyle=
+        "#718ab5";
+
+    ctx.fill();
+
+
+    /* ========================================================
+       COCKPIT
+    ======================================================== */
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        8,
+        0,
+        9,
+        5,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle=
+        "#3d6da8";
+
+    ctx.fill();
+
+    ctx.strokeStyle=
+        "#c2dcff";
+
+    ctx.stroke();
+
+
+    /* ========================================================
+       SHIELD
+    ======================================================== */
+
+    if(
+        player.shield>0
+    ){
+
+        let alpha=
+            .12+
+            (
+                player.shield/
+                player.maxShield
+            )*.28;
 
         ctx.beginPath();
 
         ctx.arc(
             0,
             0,
-            25,
+            34,
             0,
             Math.PI*2
         );
 
         ctx.strokeStyle=
-            "rgba(80,160,255,.35)";
+            `rgba(80,170,255,${alpha})`;
+
+        ctx.lineWidth=2;
+
+        ctx.shadowBlur=15;
+
+        ctx.shadowColor=
+            "#4b9fff";
 
         ctx.stroke();
+
+        ctx.shadowBlur=0;
     }
 
     ctx.restore();
 }
 
+
+/* ============================================================
+   DRAW ENEMIES
+============================================================ */
+
 function drawEnemies(){
 
-    for(const e of enemies){
+    for(
+        const e of enemies
+    ){
 
-        let s=
+        const s=
             worldToScreen(
                 e.x,
                 e.y
@@ -2084,77 +3554,119 @@ function drawEnemies(){
 
         ctx.save();
 
-        ctx.translate(s.x,s.y);
-
-        let a=Math.atan2(
-            player.y-e.y,
-            player.x-e.x
+        ctx.translate(
+            s.x,
+            s.y
         );
 
-        ctx.rotate(a);
+        let angle=
+            Math.atan2(
+                player.y-e.y,
+                player.x-e.x
+            );
+
+        ctx.rotate(angle);
 
         ctx.beginPath();
 
-        ctx.moveTo(e.size,0);
-        ctx.lineTo(-e.size,-e.size*.65);
-        ctx.lineTo(-e.size*.6,0);
-        ctx.lineTo(-e.size,e.size*.65);
+        ctx.moveTo(
+            e.size,
+            0
+        );
+
+        ctx.lineTo(
+            -e.size,
+            -e.size*.65
+        );
+
+        ctx.lineTo(
+            -e.size*.6,
+            0
+        );
+
+        ctx.lineTo(
+            -e.size,
+            e.size*.65
+        );
+
         ctx.closePath();
 
-        ctx.fillStyle=e.color;
+        ctx.fillStyle=
+            e.color;
+
         ctx.fill();
 
-        ctx.strokeStyle="#fff";
-        ctx.globalAlpha=.5;
+        ctx.strokeStyle=
+            "rgba(255,255,255,.6)";
+
         ctx.stroke();
 
         ctx.restore();
 
-        // health bar
 
-        if(e.hp<e.maxHp){
+        /* HEALTH BAR */
 
-            let width=e.size*2.5;
+        if(
+            e.hp<
+            e.maxHp
+        ){
 
-            ctx.fillStyle="#111";
+            let width=
+                e.size*2.5;
+
+            ctx.fillStyle=
+                "#10131d";
 
             ctx.fillRect(
                 s.x-width/2,
-                s.y-e.size-8,
+                s.y-e.size-9,
                 width,
                 4
             );
 
-            ctx.fillStyle="#ff4e63";
+            ctx.fillStyle=
+                "#ff4f61";
 
             ctx.fillRect(
                 s.x-width/2,
-                s.y-e.size-8,
-                width*(e.hp/e.maxHp),
+                s.y-e.size-9,
+                width*
+                Math.max(
+                    0,
+                    e.hp/e.maxHp
+                ),
                 4
             );
         }
     }
 }
 
+
+/* ============================================================
+   DRAW BULLETS
+============================================================ */
+
 function drawBullets(){
 
-    ctx.fillStyle="#b9d7ff";
+    for(
+        const b of bullets
+    ){
 
-    for(const b of bullets){
-
-        let s=
+        const s=
             worldToScreen(
                 b.x,
                 b.y
             );
+
+        ctx.fillStyle=
+            "#c4ddff";
 
         ctx.beginPath();
 
         ctx.arc(
             s.x,
             s.y,
-            b.size/2,
+            b.size,
             0,
             Math.PI*2
         );
@@ -2162,15 +3674,18 @@ function drawBullets(){
         ctx.fill();
     }
 
-    ctx.fillStyle="#ff6670";
+    for(
+        const b of enemyBullets
+    ){
 
-    for(const b of enemyBullets){
-
-        let s=
+        const s=
             worldToScreen(
                 b.x,
                 b.y
             );
+
+        ctx.fillStyle=
+            "#ff5b68";
 
         ctx.beginPath();
 
@@ -2186,20 +3701,71 @@ function drawBullets(){
     }
 }
 
+
+/* ============================================================
+   DRAW PICKUPS
+============================================================ */
+
+function drawPickups(){
+
+    for(
+        const p of pickups
+    ){
+
+        const s=
+            worldToScreen(
+                p.x,
+                p.y
+            );
+
+        ctx.fillStyle=
+            p.type===
+            "shield"
+            ?" #65b9ff"
+            :"#c96bff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            s.x,
+            s.y,
+            8+
+            Math.sin(
+                performance.now()*.01
+            )*2,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+}
+
+
+/* ============================================================
+   DRAW PARTICLES
+============================================================ */
+
 function drawParticles(){
 
-    for(const p of particles){
+    for(
+        const p of particles
+    ){
 
-        let s=
+        const s=
             worldToScreen(
                 p.x,
                 p.y
             );
 
         ctx.globalAlpha=
-            Math.max(0,p.life/60);
+            Math.max(
+                0,
+                p.life/60
+            );
 
-        ctx.fillStyle=p.color;
+        ctx.fillStyle=
+            p.color;
 
         ctx.beginPath();
 
@@ -2217,97 +3783,6 @@ function drawParticles(){
     ctx.globalAlpha=1;
 }
 
-function drawStructures(){
-
-    if(!currentSystem)
-        return;
-
-    for(const s of structures){
-
-        let x=
-            s.x+
-            currentChunk.x*CHUNK_SIZE;
-
-        let y=
-            s.y+
-            currentChunk.y*CHUNK_SIZE;
-
-        let p=worldToScreen(x,y);
-
-        if(
-            p.x<-100 ||
-            p.x>W+100 ||
-            p.y<-100 ||
-            p.y>H+100
-        )
-            continue;
-
-        ctx.save();
-
-        ctx.translate(p.x,p.y);
-
-        ctx.fillStyle=
-            s.visited?
-            "rgba(100,110,140,.4)":
-            "#728cff";
-
-        ctx.strokeStyle="#b8c8ff";
-
-        ctx.beginPath();
-
-        if(s.type==="station"){
-
-            ctx.rect(-30,-18,60,36);
-
-        }else if(s.type==="wreck"){
-
-            ctx.rotate(.4);
-            ctx.rect(-20,-8,40,16);
-
-        }else{
-
-            ctx.moveTo(0,-25);
-            ctx.lineTo(25,20);
-            ctx.lineTo(-25,20);
-            ctx.closePath();
-        }
-
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.restore();
-    }
-}
-
-function drawPickups(){
-
-    for(const p of pickups){
-
-        let s=
-            worldToScreen(
-                p.x,
-                p.y
-            );
-
-        ctx.fillStyle=
-            p.type==="shield"?
-            "#6bbcff":
-            "#c56cff";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            s.x,
-            s.y,
-            8,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-    }
-}
-
 
 /* ============================================================
    MINIMAP
@@ -2315,27 +3790,52 @@ function drawPickups(){
 
 function drawMinimap(){
 
-    const w=minimap.width;
-    const h=minimap.height;
+    const w=
+        minimap.width;
 
-    mctx.clearRect(0,0,w,h);
+    const h=
+        minimap.height;
 
-    mctx.fillStyle="#02050d";
-    mctx.fillRect(0,0,w,h);
+    mctx.clearRect(
+        0,
+        0,
+        w,
+        h
+    );
 
-    mctx.strokeStyle="rgba(100,140,255,.25)";
+    mctx.fillStyle=
+        "#02050d";
 
-    for(let i=0;i<5;i++){
+    mctx.fillRect(
+        0,
+        0,
+        w,
+        h
+    );
+
+
+    /* Grid */
+
+    mctx.strokeStyle=
+        "rgba(100,140,255,.15)";
+
+    for(
+        let i=-4;
+        i<=4;
+        i++
+    ){
 
         mctx.beginPath();
 
         mctx.moveTo(
-            w/2+i*25,
+            w/2+
+            i*20,
             0
         );
 
         mctx.lineTo(
-            w/2+i*25,
+            w/2+
+            i*20,
             h
         );
 
@@ -2345,20 +3845,24 @@ function drawMinimap(){
 
         mctx.moveTo(
             0,
-            h/2+i*25
+            h/2+
+            i*20
         );
 
         mctx.lineTo(
             w,
-            h/2+i*25
+            h/2+
+            i*20
         );
 
         mctx.stroke();
     }
 
-    // player
 
-    mctx.fillStyle="#fff";
+    /* Player */
+
+    mctx.fillStyle=
+        "white";
 
     mctx.beginPath();
 
@@ -2372,17 +3876,27 @@ function drawMinimap(){
 
     mctx.fill();
 
-    // enemies
 
-    mctx.fillStyle="#ff5968";
+    /* Enemies */
 
-    for(const e of enemies){
+    mctx.fillStyle=
+        "#ff5968";
+
+    for(
+        const e of enemies
+    ){
 
         let dx=
-            (e.x-player.x)/30;
+            (
+                e.x-
+                player.x
+            )/30;
 
         let dy=
-            (e.y-player.y)/30;
+            (
+                e.y-
+                player.y
+            )/30;
 
         if(
             Math.abs(dx)<w/2 &&
@@ -2402,20 +3916,46 @@ function drawMinimap(){
             mctx.fill();
         }
     }
-}
 
 
-/* ============================================================
-   CAMERA
-============================================================ */
+    /* Structures */
 
-function updateCamera(){
+    mctx.fillStyle=
+        "#728cff";
 
-    camera.x+=
-        (player.x-camera.x)*.12;
+    for(
+        const s of structures
+    ){
 
-    camera.y+=
-        (player.y-camera.y)*.12;
+        let sx=
+            s.x+
+            currentChunk.x*
+            CHUNK_SIZE;
+
+        let sy=
+            s.y+
+            currentChunk.y*
+            CHUNK_SIZE;
+
+        let dx=
+            (sx-player.x)/30;
+
+        let dy=
+            (sy-player.y)/30;
+
+        if(
+            Math.abs(dx)<w/2 &&
+            Math.abs(dy)<h/2
+        ){
+
+            mctx.fillRect(
+                w/2+dx-2,
+                h/2+dy-2,
+                4,
+                4
+            );
+        }
+    }
 }
 
 
@@ -2425,138 +3965,239 @@ function updateCamera(){
 
 function updateHUD(){
 
-    document.getElementById("hullBar").style.width=
-        `${Math.max(0,player.hull/player.maxHull*100)}%`;
+    document.getElementById(
+        "hullBar"
+    ).style.width=
+        `${
+            Math.max(
+                0,
+                player.hull/
+                player.maxHull*
+                100
+            )
+        }%`;
 
-    document.getElementById("shieldBar").style.width=
-        `${Math.max(0,player.shield/player.maxShield*100)}%`;
+    document.getElementById(
+        "shieldBar"
+    ).style.width=
+        `${
+            Math.max(
+                0,
+                player.shield/
+                player.maxShield*
+                100
+            )
+        }%`;
 
-    let needed=
+    document.getElementById(
+        "energyBar"
+    ).style.width=
+        `${
+            Math.max(
+                0,
+                player.energy/
+                player.maxEnergy*
+                100
+            )
+        }%`;
+
+    let required=
         100+
-        (player.level-1)*100;
+        (
+            player.level-1
+        )*100;
 
-    document.getElementById("xpBar").style.width=
-        `${Math.min(100,player.xp/needed*100)}%`;
+    document.getElementById(
+        "xpBar"
+    ).style.width=
+        `${
+            Math.min(
+                100,
+                player.xp/
+                required*
+                100
+            )
+        }%`;
 
-    document.getElementById("creditsText").textContent=
+    document.getElementById(
+        "creditsText"
+    ).textContent=
         player.credits;
 
-    document.getElementById("levelText").textContent=
+    document.getElementById(
+        "levelText"
+    ).textContent=
         `LEVEL ${player.level}`;
 
-    let names={
-        pulse:"PULSE CANNON",
-        spread:"SPREAD CANNON",
-        laser:"LASER",
-        missile:"MISSILE",
-        plasma:"PLASMA"
+    const weaponNames={
+
+        pulse:
+            "PULSE CANNON",
+
+        spread:
+            "SPREAD CANNON",
+
+        laser:
+            "LASER",
+
+        missile:
+            "MISSILE",
+
+        plasma:
+            "PLASMA"
     };
 
-    document.getElementById("weaponText").textContent=
-        names[player.weapon] || player.weapon;
+    document.getElementById(
+        "weaponText"
+    ).textContent=
+        weaponNames[
+            player.weapon
+        ];
 }
 
 
 /* ============================================================
-   GAME LOOP
+   MAIN LOOP
 ============================================================ */
 
-let lastTime=0;
+function gameLoop(){
 
-function loop(time){
+    requestAnimationFrame(
+        gameLoop
+    );
 
-    requestAnimationFrame(loop);
-
-    if(!gameRunning || paused)
+    if(
+        !gameRunning ||
+        paused
+    )
         return;
 
     updatePlayer();
+
     updateEnemies();
+
     updateBullets();
+
     updateEnemyBullets();
-    updateParticles();
-    updatePickups();
+
     updateResources();
+
     updateStructures();
+
+    updatePickups();
+
+    updateParticles();
+
     updateCamera();
 
+
     drawBackground();
+
     drawStructures();
+
     drawPickups();
+
     drawBullets();
+
+    drawEnemyBullets();
+
     drawEnemies();
+
     drawParticles();
+
     drawPlayer();
 
+
     drawMinimap();
+
     updateHUD();
 }
 
-requestAnimationFrame(loop);
+gameLoop();
 
 
 /* ============================================================
-   UI
+   UI FUNCTIONS
 ============================================================ */
 
 function showScreen(id){
 
-    document.querySelectorAll(".screen")
-        .forEach(x=>x.classList.add("hidden"));
+    document
+        .querySelectorAll(".screen")
+        .forEach(
+            x=>
+                x.classList.add(
+                    "hidden"
+                )
+        );
 
-    if(id)
-        document.getElementById(id)
-            .classList.remove("hidden");
+    if(id){
 
-    if(id==="menu"){
+        document
+            .getElementById(id)
+            .classList.remove(
+                "hidden"
+            );
+    }
 
-        document.getElementById("hud")
-            .classList.add("hidden");
-
-    }else if(
-        id!=="howto" &&
-        id!=="settings" &&
-        id!=="inventory"
+    if(
+        id==="menu" ||
+        id==="howto" ||
+        id==="settings" ||
+        id==="inventory" ||
+        id==="pause" ||
+        id==="gameover"
     ){
 
-        document.getElementById("hud")
-            .classList.remove("hidden");
+        if(
+            id==="pause" ||
+            id==="inventory"
+        ){
+
+            document
+                .getElementById("hud")
+                .classList.remove(
+                    "hidden"
+                );
+
+        }else{
+
+            document
+                .getElementById("hud")
+                .classList.add(
+                    "hidden"
+                );
+        }
     }
 }
 
-function startGame(){
 
-    gameRunning=true;
-    paused=false;
-
-    document.getElementById("hud")
-        .classList.remove("hidden");
-
-    document.querySelectorAll(".screen")
-        .forEach(x=>x.classList.add("hidden"));
-
-    buildStars();
-
-    loadChunk(
-        chunkFromPosition(
-            player.x,
-            player.y
-        ).x,
-        chunkFromPosition(
-            player.x,
-            player.y
-        ).y
-    );
-}
+/* ============================================================
+   NEW GAME
+============================================================ */
 
 function newGame(){
 
     worldSeed=
-        document.getElementById("seedInput").value.trim()
-        ||
-        "VOID-"+Math.floor(Math.random()*999999999);
+        document
+            .getElementById(
+                "seedInput"
+            )
+            .value
+            .trim();
+
+    if(!worldSeed){
+
+        worldSeed=
+            "VOID-"+
+            Math.floor(
+                Math.random()*
+                999999999
+            );
+    }
 
     player={
+
         x:0,
         y:0,
 
@@ -2564,6 +4205,9 @@ function newGame(){
         vy:0,
 
         angle:0,
+        targetAngle:0,
+
+        rotationSpeed:.18,
 
         hull:100,
         maxHull:100,
@@ -2612,33 +4256,91 @@ function newGame(){
         y:999999
     };
 
-    saveGame();
+    localStorage.removeItem(
+        "VOID_SPACE_SAVE"
+    );
+
+    buildStars();
 
     startGame();
 
+    saveWorldState();
+
     showEvent(
-        `NEW UNIVERSE • SEED ${worldSeed}`
+        `NEW UNIVERSE • ${worldSeed}`
     );
 }
+
+
+/* ============================================================
+   START GAME
+============================================================ */
+
+function startGame(){
+
+    gameRunning=true;
+    paused=false;
+
+    document
+        .querySelectorAll(".screen")
+        .forEach(
+            x=>
+                x.classList.add(
+                    "hidden"
+                )
+        );
+
+    document
+        .getElementById("hud")
+        .classList.remove(
+            "hidden"
+        );
+
+    buildStars();
+
+    let c=
+        chunkFromPosition(
+            player.x,
+            player.y
+        );
+
+    loadChunk(
+        c.x,
+        c.y
+    );
+}
+
+
+/* ============================================================
+   CONTINUE
+============================================================ */
 
 function continueGame(){
 
     let saved=
-        localStorage.getItem("VOID_SPACE_SAVE");
+        localStorage.getItem(
+            "VOID_SPACE_SAVE"
+        );
 
     if(!saved){
 
         newGame();
+
         return;
     }
 
     try{
 
-        const data=JSON.parse(saved);
+        let data=
+            JSON.parse(saved);
 
-        worldSeed=data.seed || worldSeed;
+        worldSeed=
+            data.seed ||
+            worldSeed;
 
-        player=data.player || player;
+        player=
+            data.player ||
+            player;
 
         startGame();
 
@@ -2646,10 +4348,39 @@ function continueGame(){
             "UNIVERSE RESTORED"
         );
 
-    }catch(e){
+    }catch(error){
 
         newGame();
     }
+}
+
+
+/* ============================================================
+   SAVE
+============================================================ */
+
+function saveWorldState(){
+
+    try{
+
+        localStorage.setItem(
+
+            "VOID_SPACE_SAVE",
+
+            JSON.stringify({
+
+                seed:
+                    worldSeed,
+
+                player:
+                    player,
+
+                timestamp:
+                    Date.now()
+            })
+        );
+
+    }catch(error){}
 }
 
 function saveGame(){
@@ -2661,185 +4392,271 @@ function saveGame(){
     );
 }
 
-function saveWorldState(){
 
-    try{
-
-        localStorage.setItem(
-            "VOID_SPACE_SAVE",
-
-            JSON.stringify({
-
-                seed:worldSeed,
-
-                player,
-
-                timestamp:Date.now()
-            })
-        );
-
-    }catch(e){}
-}
+/* ============================================================
+   SEED
+============================================================ */
 
 function applySeed(){
 
-    worldSeed=
-        document.getElementById("seedInput")
-        .value
-        .trim();
+    let value=
+        document
+            .getElementById(
+                "seedInput"
+            )
+            .value
+            .trim();
 
-    if(!worldSeed)
-        worldSeed="VOID-"+Math.floor(Math.random()*999999999);
+    if(value)
+        worldSeed=value;
 
     showEvent(
         "SEED READY"
     );
 
-    showScreen("menu");
+    showScreen(
+        "menu"
+    );
 }
+
+
+/* ============================================================
+   INVENTORY
+============================================================ */
 
 function showInventory(){
 
-    const grid=
-        document.getElementById("inventoryGrid");
+    let grid=
+        document.getElementById(
+            "inventoryGrid"
+        );
 
     grid.innerHTML="";
 
-    for(const key in player.inventory){
+    for(
+        const key in player.inventory
+    ){
 
-        let div=document.createElement("div");
+        let div=
+            document.createElement(
+                "div"
+            );
 
-        div.className="item";
+        div.className=
+            "item";
 
         div.innerHTML=
             `<b>${key.toUpperCase()}</b>
              <span>${player.inventory[key]}</span>`;
 
-        grid.appendChild(div);
+        grid.appendChild(
+            div
+        );
     }
 
-    showScreen("inventory");
+    showScreen(
+        "inventory"
+    );
 }
+
+
+/* ============================================================
+   PAUSE
+============================================================ */
 
 function togglePause(){
 
     paused=!paused;
 
-    if(paused)
-        showScreen("pause");
-    else
-        document.querySelectorAll(".screen")
-            .forEach(x=>x.classList.add("hidden"));
+    if(paused){
+
+        showScreen(
+            "pause"
+        );
+
+    }else{
+
+        document
+            .querySelectorAll(".screen")
+            .forEach(
+                x=>
+                    x.classList.add(
+                        "hidden"
+                    )
+            );
+    }
 }
+
+
+/* ============================================================
+   GAME OVER
+============================================================ */
 
 function gameOver(){
 
     gameRunning=false;
 
-    document.getElementById("gameOverText")
-        .innerHTML=
+    document.getElementById(
+        "gameOverText"
+    ).innerHTML=
+
         `LEVEL ${player.level}<br>
          KILLS ${player.kills}<br>
          CREDITS ${player.credits}<br>
          SECTOR ${currentChunk.x}:${currentChunk.y}`;
 
-    showScreen("gameover");
-
     saveWorldState();
+
+    showScreen(
+        "gameover"
+    );
 }
+
+
+/* ============================================================
+   EVENTS
+============================================================ */
 
 function showEvent(text){
 
     const el=
-        document.getElementById("eventText");
+        document.getElementById(
+            "eventText"
+        );
 
     el.textContent=text;
 
-    el.classList.add("show");
+    el.classList.add(
+        "show"
+    );
 
-    clearTimeout(showEvent.timer);
+    clearTimeout(
+        showEvent.timer
+    );
 
     showEvent.timer=
-        setTimeout(()=>{
-            el.classList.remove("show");
-        },3500);
+        setTimeout(
+            ()=>{
+                el.classList.remove(
+                    "show"
+                );
+            },
+            3500
+        );
 }
 
 
 /* ============================================================
-   INPUT
+   KEYBOARD
 ============================================================ */
 
-addEventListener("keydown",e=>{
+addEventListener(
+    "keydown",
+    e=>{
 
-    keys[e.key.toLowerCase()]=true;
+        keys[
+            e.key.toLowerCase()
+        ]=true;
 
-    if(e.key==="Escape" || e.key.toLowerCase()==="p"){
+        if(
+            e.key==="Escape" ||
+            e.key.toLowerCase()==="p"
+        ){
 
-        if(gameRunning)
-            togglePause();
+            if(gameRunning)
+                togglePause();
+        }
+
+
+        if(e.key==="1")
+            player.weapon="pulse";
+
+        if(e.key==="2")
+            player.weapon="spread";
+
+        if(e.key==="3")
+            player.weapon="laser";
+
+        if(e.key==="4")
+            player.weapon="missile";
+
+        if(e.key==="5")
+            player.weapon="plasma";
     }
+);
 
-    if(e.key==="1")
-        player.weapon="pulse";
+addEventListener(
+    "keyup",
+    e=>{
 
-    if(e.key==="2")
-        player.weapon="spread";
-
-    if(e.key==="3")
-        player.weapon="laser";
-
-    if(e.key==="4")
-        player.weapon="missile";
-
-    if(e.key==="5")
-        player.weapon="plasma";
-});
-
-addEventListener("keyup",e=>{
-
-    keys[e.key.toLowerCase()]=false;
-});
-
-canvas.addEventListener("mousemove",e=>{
-
-    mouse.x=e.clientX;
-    mouse.y=e.clientY;
-
-    const cross=
-        document.getElementById("crosshair");
-
-    cross.style.display="block";
-
-    cross.style.left=
-        e.clientX+"px";
-
-    cross.style.top=
-        e.clientY+"px";
-});
-
-canvas.addEventListener("mousedown",e=>{
-
-    if(e.button===0)
-        mouse.down=true;
-});
-
-addEventListener("mouseup",e=>{
-
-    if(e.button===0)
-        mouse.down=false;
-});
+        keys[
+            e.key.toLowerCase()
+        ]=false;
+    }
+);
 
 
 /* ============================================================
-   MOBILE
+   MOUSE
+============================================================ */
+
+canvas.addEventListener(
+    "mousemove",
+    e=>{
+
+        mouse.x=e.clientX;
+        mouse.y=e.clientY;
+
+        const cross=
+            document.getElementById(
+                "crosshair"
+            );
+
+        cross.style.display=
+            "block";
+
+        cross.style.left=
+            e.clientX+
+            "px";
+
+        cross.style.top=
+            e.clientY+
+            "px";
+    }
+);
+
+canvas.addEventListener(
+    "mousedown",
+    e=>{
+
+        if(e.button===0)
+            mouse.down=true;
+    }
+);
+
+addEventListener(
+    "mouseup",
+    e=>{
+
+        if(e.button===0)
+            mouse.down=false;
+    }
+);
+
+
+/* ============================================================
+   MOBILE JOYSTICK
 ============================================================ */
 
 const joystick=
-    document.getElementById("joystick");
+    document.getElementById(
+        "joystick"
+    );
 
 const stick=
-    document.getElementById("stick");
+    document.getElementById(
+        "stick"
+    );
 
 let joystickActive=false;
 
@@ -2853,24 +4670,42 @@ function joystickMove(e){
 
     let x=
         touch.clientX-
-        (rect.left+rect.width/2);
+        (
+            rect.left+
+            rect.width/2
+        );
 
     let y=
         touch.clientY-
-        (rect.top+rect.height/2);
+        (
+            rect.top+
+            rect.height/2
+        );
 
-    let d=Math.hypot(x,y);
+    let distance=
+        Math.hypot(
+            x,
+            y
+        );
 
     let max=45;
 
-    if(d>max){
+    if(distance>max){
 
-        x=x/d*max;
-        y=y/d*max;
+        x=
+            x/distance*
+            max;
+
+        y=
+            y/distance*
+            max;
     }
 
-    mobile.x=x/max;
-    mobile.y=y/max;
+    mobile.x=
+        x/max;
+
+    mobile.y=
+        y/max;
 
     stick.style.transform=
         `translate(${x}px,${y}px)`;
@@ -2879,33 +4714,50 @@ function joystickMove(e){
 joystick.addEventListener(
     "touchstart",
     e=>{
+
         joystickActive=true;
+
         joystickMove(e);
     },
-    {passive:true}
+    {
+        passive:true
+    }
 );
 
 joystick.addEventListener(
     "touchmove",
     e=>{
+
         if(joystickActive)
             joystickMove(e);
     },
-    {passive:true}
+    {
+        passive:true
+    }
 );
 
 joystick.addEventListener(
     "touchend",
     ()=>{
+
         joystickActive=false;
+
         mobile.x=0;
         mobile.y=0;
+
         stick.style.transform="";
     }
 );
 
+
+/* ============================================================
+   MOBILE FIRE
+============================================================ */
+
 const fireBtn=
-    document.getElementById("fireBtn");
+    document.getElementById(
+        "fireBtn"
+    );
 
 fireBtn.addEventListener(
     "touchstart",
@@ -2921,8 +4773,15 @@ fireBtn.addEventListener(
     }
 );
 
+
+/* ============================================================
+   MOBILE BOOST
+============================================================ */
+
 const boostBtn=
-    document.getElementById("boostBtn");
+    document.getElementById(
+        "boostBtn"
+    );
 
 boostBtn.addEventListener(
     "touchstart",
@@ -2943,12 +4802,16 @@ boostBtn.addEventListener(
    INITIALIZATION
 ============================================================ */
 
-document.getElementById("seedInput").value=
+document.getElementById(
+    "seedInput"
+).value=
     worldSeed;
 
 buildStars();
 
-showScreen("menu");
+showScreen(
+    "menu"
+);
 
 </script>
 
@@ -2958,28 +4821,27 @@ showScreen("menu");
 
 
 # ============================================================
-# PYTHON PROCEDURAL WORLD API
+# SERVER-SIDE DETERMINISTIC GENERATOR
 # ============================================================
 
 def deterministic_rng(seed):
-    """
-    Deterministic RNG for server-side world generation.
-    Same seed always creates the same result.
-    """
-    digest = hashlib.sha256(str(seed).encode()).hexdigest()
-    integer = int(digest[:16], 16)
-    return random.Random(integer)
+    digest = hashlib.sha256(
+        str(seed).encode("utf-8")
+    ).hexdigest()
+
+    number = int(
+        digest[:16],
+        16
+    )
+
+    return random.Random(number)
 
 
 def generate_sector(seed, x, y):
-    """
-    Minecraft-style deterministic sector generation.
 
-    The browser can request any sector without Python
-    storing every sector in memory.
-    """
-
-    rng = deterministic_rng(f"{seed}:sector:{x}:{y}")
+    rng = deterministic_rng(
+        f"{seed}:sector:{x}:{y}"
+    )
 
     biomes = [
         "deep_space",
@@ -2993,7 +4855,7 @@ def generate_sector(seed, x, y):
         "mining_zone"
     ]
 
-    star_types = [
+    stars = [
         "blue",
         "yellow",
         "red",
@@ -3001,7 +4863,7 @@ def generate_sector(seed, x, y):
         "neutron"
     ]
 
-    system_names = [
+    names = [
         "Aster",
         "Vega",
         "Nox",
@@ -3033,29 +4895,55 @@ def generate_sector(seed, x, y):
     ]
 
     sector = {
+
         "x": x,
         "y": y,
 
-        "biome": rng.choice(biomes),
+        "biome":
+            rng.choice(
+                biomes
+            ),
 
-        "danger": rng.randint(1, 10),
+        "danger":
+            rng.randint(
+                1,
+                10
+            ),
 
         "system_name":
-            f"{rng.choice(system_names)}-{rng.randint(100,999)}",
+            rng.choice(names)+
+            "-"+
+            str(
+                rng.randint(
+                    100,
+                    999
+                )
+            ),
 
         "star":
-            rng.choice(star_types),
+            rng.choice(
+                stars
+            ),
 
         "faction":
-            rng.choice(factions),
+            rng.choice(
+                factions
+            ),
 
         "special":
-            rng.choice(specials),
+            rng.choice(
+                specials
+            ),
 
-        "planets": [],
-        "structures": [],
-        "resources": []
+        "planets":[],
+        "structures":[],
+        "resources":[]
     }
+
+
+    # ========================================================
+    # PLANETS
+    # ========================================================
 
     planet_types = [
         "rocky",
@@ -3066,21 +4954,46 @@ def generate_sector(seed, x, y):
         "dead"
     ]
 
-    for i in range(rng.randint(1, 6)):
+    for i in range(
+        rng.randint(
+            1,
+            6
+        )
+    ):
 
         sector["planets"].append({
+
             "name":
-                f"{chr(65+i)}-{rng.randint(10,99)}",
+                f"{chr(65+i)}-"+
+                str(
+                    rng.randint(
+                        10,
+                        99
+                    )
+                ),
 
             "type":
-                rng.choice(planet_types),
+                rng.choice(
+                    planet_types
+                ),
 
             "radius":
-                rng.randint(15, 50),
+                rng.randint(
+                    15,
+                    50
+                ),
 
             "orbit":
-                rng.randint(180, 700)
+                rng.randint(
+                    180,
+                    700
+                )
         })
+
+
+    # ========================================================
+    # STRUCTURES
+    # ========================================================
 
     structure_types = [
         "station",
@@ -3091,17 +5004,43 @@ def generate_sector(seed, x, y):
         "research_outpost"
     ]
 
-    for _ in range(rng.randint(0, 5)):
+    for _ in range(
+        rng.randint(
+            0,
+            5
+        )
+    ):
 
         sector["structures"].append({
-            "type": rng.choice(structure_types),
+
+            "type":
+                rng.choice(
+                    structure_types
+                ),
 
             "x":
-                round(rng.uniform(-1800, 1800), 2),
+                round(
+                    rng.uniform(
+                        -1800,
+                        1800
+                    ),
+                    2
+                ),
 
             "y":
-                round(rng.uniform(-1800, 1800), 2)
+                round(
+                    rng.uniform(
+                        -1800,
+                        1800
+                    ),
+                    2
+                )
         })
+
+
+    # ========================================================
+    # RESOURCES
+    # ========================================================
 
     resource_types = [
         "iron",
@@ -3109,20 +5048,43 @@ def generate_sector(seed, x, y):
         "alien"
     ]
 
-    for _ in range(rng.randint(5, 20)):
+    for _ in range(
+        rng.randint(
+            5,
+            20
+        )
+    ):
 
         sector["resources"].append({
+
             "type":
-                rng.choice(resource_types),
+                rng.choice(
+                    resource_types
+                ),
 
             "x":
-                round(rng.uniform(-2500, 2500), 2),
+                round(
+                    rng.uniform(
+                        -2500,
+                        2500
+                    ),
+                    2
+                ),
 
             "y":
-                round(rng.uniform(-2500, 2500), 2),
+                round(
+                    rng.uniform(
+                        -2500,
+                        2500
+                    ),
+                    2
+                ),
 
             "amount":
-                rng.randint(1, 8)
+                rng.randint(
+                    1,
+                    8
+                )
         })
 
     return sector
@@ -3134,7 +5096,9 @@ def generate_sector(seed, x, y):
 
 @app.route("/")
 def index():
-    return render_template_string(HTML)
+    return render_template_string(
+        HTML
+    )
 
 
 @app.route("/health")
@@ -3151,20 +5115,35 @@ def api_sector():
     )
 
     try:
-        x = int(request.args.get("x", 0))
-        y = int(request.args.get("y", 0))
+
+        x = int(
+            request.args.get(
+                "x",
+                0
+            )
+        )
+
+        y = int(
+            request.args.get(
+                "y",
+                0
+            )
+        )
+
     except ValueError:
+
         return jsonify({
-            "error": "Invalid coordinates"
+            "error":
+                "Invalid coordinates"
         }), 400
 
-    sector = generate_sector(
-        seed,
-        x,
-        y
+    return jsonify(
+        generate_sector(
+            seed,
+            x,
+            y
+        )
     )
-
-    return jsonify(sector)
 
 
 @app.route("/api/world")
@@ -3175,19 +5154,38 @@ def api_world():
         "VOID-829174"
     )
 
-    radius = min(
-        max(
-            int(request.args.get("radius", 1)),
-            1
-        ),
-        5
+    try:
+
+        radius = int(
+            request.args.get(
+                "radius",
+                1
+            )
+        )
+
+    except ValueError:
+
+        radius=1
+
+    radius=max(
+        1,
+        min(
+            radius,
+            5
+        )
     )
 
-    sectors = []
+    sectors=[]
 
-    for x in range(-radius, radius + 1):
+    for x in range(
+        -radius,
+        radius+1
+    ):
 
-        for y in range(-radius, radius + 1):
+        for y in range(
+            -radius,
+            radius+1
+        ):
 
             sectors.append(
                 generate_sector(
@@ -3198,9 +5196,15 @@ def api_world():
             )
 
     return jsonify({
-        "seed": seed,
-        "radius": radius,
-        "sectors": sectors
+
+        "seed":
+            seed,
+
+        "radius":
+            radius,
+
+        "sectors":
+            sectors
     })
 
 
@@ -3212,26 +5216,29 @@ def api_galaxy():
         "VOID-829174"
     )
 
-    rng = deterministic_rng(
-        f"{seed}:galaxy"
-    )
-
-    galaxy_types = [
-        "spiral",
-        "cluster",
-        "irregular",
-        "ring"
-    ]
+    rng=
+        deterministic_rng(
+            f"{seed}:galaxy"
+        )
 
     return jsonify({
 
-        "seed": seed,
+        "seed":
+            seed,
 
         "type":
-            rng.choice(galaxy_types),
+            rng.choice([
+                "spiral",
+                "cluster",
+                "irregular",
+                "ring"
+            ]),
 
         "age":
-            rng.randint(5, 14),
+            rng.randint(
+                5,
+                14
+            ),
 
         "stars":
             rng.randint(
@@ -3240,26 +5247,20 @@ def api_galaxy():
             ),
 
         "civilizations":
-            rng.randint(3, 15),
-
-        "factions":
-            [
-                "Federation",
-                "Mining Guild",
-                "Pirate Clans",
-                "Outer Colonies",
-                "Ancient Aliens"
-            ]
+            rng.randint(
+                3,
+                15
+            )
     })
 
 
 # ============================================================
-# START SERVER
+# RUN
 # ============================================================
 
 if __name__ == "__main__":
 
-    port = int(
+    port=int(
         os.environ.get(
             "PORT",
             10000

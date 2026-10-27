@@ -692,6 +692,94 @@ button.primary:hover{
   button{transition:none;}
 }
 
+
+/* UI POLISH PASS — depth, hierarchy, and quieter micro-interactions */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  opacity:.68;
+  background:
+    radial-gradient(ellipse at 16% 18%,rgba(135,154,239,.09),transparent 34%),
+    radial-gradient(ellipse at 84% 78%,rgba(132,205,226,.07),transparent 32%),
+    linear-gradient(135deg,rgba(255,255,255,.012),transparent 42%);
+}
+.screen.active .panel{
+  animation:panel-arrive .36s cubic-bezier(.2,.75,.25,1) both;
+}
+@keyframes panel-arrive{
+  from{opacity:0;transform:translateY(9px) scale(.99);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+.panel{
+  position:relative;
+  isolation:isolate;
+  border-color:rgba(184,197,255,.17);
+}
+.panel::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:12%;
+  right:12%;
+  height:1px;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(203,215,255,.5),transparent);
+}
+.panel h1{
+  text-wrap:balance;
+}
+.menu-buttons{
+  width:100%;
+}
+.menu-buttons>button{
+  max-width:100%;
+}
+.menu-buttons>button:not(.primary){
+  background:rgba(255,255,255,.025);
+  border-color:rgba(173,190,255,.13);
+  color:#dce2f8;
+}
+.menu-buttons>button:not(.primary):hover{
+  background:rgba(173,190,255,.075);
+  border-color:rgba(184,197,255,.34);
+}
+.info,.ship-card,.upgrade-card,.neon-stats span{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.info:hover,.ship-card:hover{
+  border-color:rgba(173,190,255,.25);
+}
+#pauseHint{
+  color:#8e9bbd;
+  letter-spacing:.015em;
+}
+#gameControls button,#touchControls button{
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+#gameControls button:active,#touchControls button:active{
+  filter:brightness(1.12);
+}
+#healthBar,#energyBar{
+  border-radius:inherit;
+}
+#healthOuter,#energyOuter{
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28);
+}
+::selection{
+  color:#10162c;
+  background:#c3c8ff;
+}
+@media(hover:hover) and (pointer:fine){
+  .info,.ship-card{transition:border-color .18s ease,background .18s ease;}
+}
+@media(prefers-reduced-motion:reduce){
+  .screen.active .panel{animation:none;}
+}
+
 </style>
 </head>
 

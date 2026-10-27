@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, Response
+from flask import Flask, render_template_string, Response, send_file
 import os
 
 app = Flask(__name__)
@@ -3356,6 +3356,11 @@ self.addEventListener("fetch", event => {
 });
 """
     return Response(worker, mimetype="application/javascript", headers={"Cache-Control": "no-cache"})
+
+
+@app.route("/tree-menu")
+def tree_menu():
+    return send_file(os.path.join(os.path.dirname(__file__), "tree-menu.html"), mimetype="text/html")
 
 
 @app.route("/health")

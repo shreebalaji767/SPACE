@@ -1381,6 +1381,7 @@ function startGame(){
 
     paused = false;
     running = true;
+    if(currentGameMode==="bossrush")spawnBoss();
 
     hideScreens();
 
@@ -2662,7 +2663,7 @@ function updateWave(dt){
     */
 
     if(
-        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:18) &&
+        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:currentGameMode==="endless"?14:18) &&
         enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5) &&
         !enemies.some(e=>e.boss)
     ){
@@ -2693,7 +2694,7 @@ function updateWave(dt){
     const maximum =
         Math.min(
             8+wave*2,
-            35
+            currentGameMode==="endless"?45:35
         );
 
     if(
@@ -2703,8 +2704,8 @@ function updateWave(dt){
 
         enemySpawnTimer =
             Math.max(
-                .25,
-                1.2-wave*.035
+                .22,
+                1.2-wave*(currentGameMode==="endless"?.05:.035)
             );
 
         spawnEnemy();

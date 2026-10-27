@@ -8,7 +8,7 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 
 - **Arcade combat:** fast fighters, tanks, ranged sniper enemies, enemy projectiles, boss encounters, and escalating waves.
 - **Bomb shockwave:** spend energy to damage nearby enemies, clear nearby enemy bullets, and trigger a short cinematic slow-motion effect.
-- **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, and salvage-magnet upgrades.
+- **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, salvage magnet, phase-piercing shots, hit-blocking shield charges, stronger bombs, gradual hull regeneration, and side-cannon wingman drones.
 - **Progression:** gain XP and pilot levels, earn credits, track best score and deepest wave, and unlock four ships.
 - **Ship hangar:**
   - **Neon Striker** — balanced starter ship.

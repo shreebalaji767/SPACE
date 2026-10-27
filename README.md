@@ -9,6 +9,8 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 - **Arcade combat:** fast fighters, tanks, ranged sniper enemies, enemy projectiles, boss encounters, and escalating waves.
 - **Bomb shockwave:** spend energy to damage nearby enemies, clear nearby enemy bullets, and trigger a short cinematic slow-motion effect.
 - **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, salvage magnet, phase-piercing shots, hit-blocking shield charges, stronger bombs, gradual hull regeneration, and side-cannon wingman drones.
+- **Weapon evolution:** combine run upgrades to evolve builds into Plasma Swarm, Starstorm, Phase Lance, Nova Singularity, or Aegis Engine. Evolutions enhance damage, multi-shot, piercing, bomb radius, or regeneration.
+- **Permanent ship skill trees:** spend earned credits on five-rank Hull, Thrusters, Reactor, and Weapon Calibration skills for each ship. Skills are saved locally per ship and apply when a new run starts.
 - **Progression:** gain XP and pilot levels, earn credits, track best score and deepest wave, and unlock four ships.
 - **Ship hangar:**
   - **Neon Striker** — balanced starter ship.
@@ -24,7 +26,7 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 
 ## Save system (no database)
 
-VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed.
+VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed.
 
 - **No database or server-side player account is used.**
 - Saves belong to that browser and site origin; they do not automatically sync between devices or browsers.
@@ -98,7 +100,7 @@ For a WSGI deployment, the Flask application object is `app` in `app.py`; a plat
 
 ## Save data and privacy
 
-The game stores credits, pilot level/XP, unlocked and selected ships, best score/wave, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`.
+The game stores credits, pilot level/XP, unlocked and selected ships, per-ship skill-tree ranks, best score/wave, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`.
 
 - Data is local to that browser and origin; it does not automatically sync across devices.
 - Clearing site data or using a different browser/profile can reset progression.

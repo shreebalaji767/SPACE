@@ -1324,7 +1324,7 @@ function resetGame(){
 
     player.angle = 0;
 
-    const ship=ships[selectedShip]||ships.striker;const skill=shipSkills[selectedShip]||{hull:0,thrusters:0,reactor:0,weapon:0};player.maxHealth=ship.hp+skill.hull*8;player.health=player.maxHealth;player.energy=Math.min(player.maxEnergy||100,100+skill.reactor*5);player.shipSpeed=ship.speed*(1+skill.thrusters*.035);player.shipDamage=ship.damage*(1+skill.weapon*.04);
+    const ship=ships[selectedShip]||ships.striker;const skill=shipSkills[selectedShip]||{hull:0,thrusters:0,reactor:0,weapon:0};player.maxHealth=ship.hp+skill.hull*8;player.health=player.maxHealth;player.maxEnergy=100+skill.reactor*5;player.energy=player.maxEnergy;player.shipSpeed=ship.speed*(1+skill.thrusters*.035);player.shipDamage=ship.damage*(1+skill.weapon*.04);
 
     player.fireCooldown = 0;
     player.boostCooldown = 0;

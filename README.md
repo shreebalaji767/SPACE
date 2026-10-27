@@ -6,11 +6,19 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 
 ## Features
 
-- **Arcade combat:** fast fighters, tanks, ranged sniper enemies, enemy projectiles, boss encounters, and escalating waves.
-- **Bomb shockwave:** spend energy to damage nearby enemies, clear nearby enemy bullets, and trigger a short cinematic slow-motion effect.
-- **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, salvage magnet, phase-piercing shots, hit-blocking shield charges, stronger bombs, gradual hull regeneration, and side-cannon wingman drones.
-- **Weapon evolution:** combine run upgrades to evolve builds into Plasma Swarm, Starstorm, Phase Lance, Nova Singularity, or Aegis Engine. Evolutions enhance damage, multi-shot, piercing, bomb radius, or regeneration.
-- **Permanent ship skill trees:** spend earned credits on five-rank Hull, Thrusters, Reactor, and Weapon Calibration skills for each ship. Skills are saved locally per ship and apply when a new run starts.
+- **Arcade combat:** fast fighters, tanks, ranged snipers, enemy projectiles, escalating waves, and three named boss variants.
+- **Multi-phase bosses:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health, with phase-transition slow motion, flashes, unique colors, and a live boss bar.
+- **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.
+- **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
+- **Interactive environments:** destructible asteroids drift through each run, damage the ship on contact, and can drop credits when destroyed. Campaign routes tint the hazard fields.
+- **Five game modes:** Survival, Endless, Boss Rush, three-minute Time Attack, and tougher Hardcore.
+- **Three-sector campaign:** choose Derelict Belt, Ion Storm, or Singularity Edge; clear waves and defeat the sector boss to earn a completion bonus.
+- **Ship ultimates:** press **E** or use the on-screen ULTIMATE control. The Striker detonates a nova, Phantom phases through danger, Titan triggers an overdrive blast, and Spectre releases a screen-wide prism nova.
+- **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, salvage magnet, phase-piercing shots, shield charges, stronger bombs, hull regeneration, and side-cannon drones.
+- **Weapon evolution:** combine run upgrades to evolve builds into Plasma Swarm, Starstorm, Phase Lance, Nova Singularity, or Aegis Engine.
+- **Permanent ship skill trees:** spend earned credits on five-rank Hull, Thrusters, Reactor, and Weapon Calibration skills for each ship.
+- **Achievements:** unlock persistent badges for kills, boss victories, high scores, weapon evolutions, ship collection, and campaign clears.
+- **Save backup and restore:** export the local profile to JSON and import it later, useful for manual backups or moving between browsers.
 - **Progression:** gain XP and pilot levels, earn credits, track best score and deepest wave, and unlock four ships.
 - **Ship hangar:**
   - **Neon Striker** — balanced starter ship.
@@ -26,7 +34,7 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 
 ## Save system (no database)
 
-VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed.
+VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed. The existing `voidSpaceProfile` key is preserved, and older profiles migrate forward when loaded. The profile now includes achievements, lifetime kills, boss defeats, campaign completions, per-mode records, and ship skill ranks.
 
 - **No database or server-side player account is used.**
 - Saves belong to that browser and site origin; they do not automatically sync between devices or browsers.
@@ -46,11 +54,13 @@ Open the deployed game in a modern browser. On compatible browsers, choose **INS
 | Brake / reverse | **S** or **↓** |
 | Fire | **Space** or **X**; left mouse button |
 | Bomb | **B** |
+| Cycle weapon | **Q** |
+| Ship ultimate | **E** or the on-screen ULTIMATE button |
 | Pause / resume | **P** or **Esc** |
 | Aim | Move the mouse over the game |
 | Touch | Use the on-screen touch controls |
 
-On desktop, the on-screen control dock is available while a run is active. On mobile, use the touch controls displayed by the game.
+On desktop, the on-screen control dock is available while a run is active. On mobile, use the touch controls displayed by the game. Weapon pickups cycle to the next weapon and increase its level; Q lets keyboard players switch manually.
 
 ## Run locally
 
@@ -100,7 +110,7 @@ For a WSGI deployment, the Flask application object is `app` in `app.py`; a plat
 
 ## Save data and privacy
 
-The game stores credits, pilot level/XP, unlocked and selected ships, per-ship skill-tree ranks, best score/wave, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`.
+The game stores credits, pilot level/XP, unlocked and selected ships, per-ship skill-tree ranks, achievements, lifetime combat statistics, campaign progress, mode records, best score/wave, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`. The Save Backup / Restore screen exports and imports this profile as JSON.
 
 - Data is local to that browser and origin; it does not automatically sync across devices.
 - Clearing site data or using a different browser/profile can reset progression.

@@ -3612,7 +3612,7 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
   if(phaseLabel)phaseLabel.textContent=scene<4?"AUTO-FIRE / WAVE 03":scene<7?"WEAPON EVOLUTION":scene<10?"BOMB DETONATION":scene<15?"BOSS PHASE 02 / 03":scene<19?"CINEMATIC SLOW-MO":scene<22?"UPGRADE + REWARDS":"VICTORY";
   ctx.restore();requestAnimationFrame(draw);
  }
- window.stopVoidLandingShowcase=()=>{stopped=true;};
+ window.stopVoidLandingShowcase=()=>{last=0;}; // The trailer pauses itself off-screen and resumes when landing returns.
  window.addEventListener("resize",resize,{passive:true});
  resize();requestAnimationFrame(draw);
 })();

@@ -1374,7 +1374,11 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
 
         </div>
 
-        <button class="primary" id="restartButton">
+        <button class="primary" id="nextLevelButton" style="display:none">
+            NEXT LEVEL →
+        </button>
+
+        <button id="restartButton">
             PLAY AGAIN
         </button>
 
@@ -1784,6 +1788,8 @@ function endGame(victory=false){
     // The landing showcase uses the real simulation but must never grant progression.
     if(landingShowcaseMode)return;
     document.querySelector("#gameOverScreen h1").textContent=victory?"SECTOR CLEARED":"GAME OVER";
+    const nextLevelButton=document.getElementById("nextLevelButton");
+    if(nextLevelButton)nextLevelButton.style.display=victory&&currentGameMode==="campaign"?"inline-block":"none";
     if(victory){campaignWins++;campaignProgress[currentRoute]=(campaignProgress[currentRoute]||0)+1;awardVoidCoins(500+wave*25);awardVoidXP(300);createBurst(player.x,player.y,150,12,"#ffe9a6");screenFlash=.9;}
     modeRecords[currentGameMode]=Math.max(modeRecords[currentGameMode]||0,score);
     checkVoidAchievements();
@@ -1812,6 +1818,15 @@ document.getElementById("startButton")
 
 document.getElementById("restartButton")
     .addEventListener("click",startGame);
+
+document.getElementById("nextLevelButton").addEventListener("click",()=>{
+    if(currentGameMode!=="campaign"||!runEndedByVictory)return;
+    const routes=["derelict","ionstorm","singularity"];
+    const currentIndex=routes.indexOf(currentRoute);
+    currentRoute=routes[(currentIndex+1+routes.length)%routes.length];
+    currentGameMode="campaign";
+    startGame();
+});
 
 document.getElementById("resumeButton")
     .addEventListener("click",togglePause);

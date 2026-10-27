@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, Response
 import os
 
 app = Flask(__name__)
@@ -2970,6 +2970,49 @@ loadVoidProfile();createStars();updateHUD();paintMeta();
 @app.route("/")
 def index():
     return render_template_string(HTML)
+
+
+@app.route("/manifest.json")
+def pwa_manifest():
+    return app.response_class(
+        response='{"name":"VOID SPACE","short_name":"VOID SPACE","description":"Neon cyberpunk space survival roguelite","start_url":"/","scope":"/","display":"standalone","background_color":"#02030a","theme_color":"#02030a","orientation":"any","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}',
+        status=200,
+        mimetype="application/manifest+json"
+    )
+
+
+@app.route("/icon.svg")
+def pwa_icon():
+    return app.response_class(
+        response='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g"><stop stop-color="#63caff"/><stop offset="1" stop-color="#b84dff"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#040818"/><path d="M47 32 14 17l8 15-8 15z" fill="url(#g)" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="41" cy="32" r="4" fill="#fff"/></svg>',
+        status=200,
+        mimetype="image/svg+xml"
+    )
+
+
+@app.route("/sw.js")
+def pwa_service_worker():
+    worker = """
+const CACHE = "void-space-v1";
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
+  self.skipWaiting();
+});
+self.addEventListener("activate", event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))));
+  self.clients.claim();
+});
+self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) return;
+  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+    if (response.ok && (event.request.mode === "navigate" || /manifest\\.json|icon\\.svg/.test(new URL(event.request.url).pathname))) {
+      const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy));
+    }
+    return response;
+  }).catch(() => caches.match("/"))));
+});
+"""
+    return Response(worker, mimetype="application/javascript", headers={"Cache-Control": "no-cache"})
 
 
 @app.route("/health")

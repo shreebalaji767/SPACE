@@ -2668,7 +2668,7 @@ function updateEnemies(dt){
    BULLET COLLISIONS
 ========================================================= */
 
-function bossWeakPoint(enemy){if(!enemy||!enemy.boss)return null;const angle=performance.now()/720+(enemy.bossKind||0)*1.4;return{x:enemy.x+Math.cos(angle)*enemy.radius*.58,y:enemy.y+Math.sin(angle)*enemy.radius*.58,active:Math.floor(performance.now()/1700)%2===0};}
+function bossWeakPoint(enemy){if(!enemy||!enemy.boss)return null;const spin=performance.now()/720+(enemy.bossKind||0)*1.4,offset=enemy.radius*.58,aim=Math.atan2(player.y-enemy.y,player.x-enemy.x),lx=Math.cos(spin)*offset,ly=Math.sin(spin)*offset;return{x:enemy.x+lx*Math.cos(aim)-ly*Math.sin(aim),y:enemy.y+lx*Math.sin(aim)+ly*Math.cos(aim),active:Math.floor(performance.now()/1700)%2===0};}
 
 function bulletCollisions(){
 

@@ -1048,6 +1048,28 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
   .screen.active .panel{animation:none;}
 }
 
+
+/* PWA install action */
+.landing-install-button{
+  min-height:36px!important;
+  padding:8px 12px!important;
+  border:1px solid rgba(156,232,210,.28)!important;
+  border-radius:9px!important;
+  background:rgba(156,232,210,.07)!important;
+  color:#bfeee0!important;
+  font-size:10px!important;
+  font-weight:750!important;
+  letter-spacing:.055em!important;
+}
+.landing-install-button:hover{
+  border-color:rgba(156,232,210,.58)!important;
+  background:rgba(156,232,210,.13)!important;
+}
+.landing-install-button[hidden]{display:none!important;}
+@media(max-width:520px){
+  .landing-install-button{min-height:32px!important;padding:7px 8px!important;font-size:9px!important;}
+}
+
 </style>
 </head>
 
@@ -1102,6 +1124,7 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
         <span>VOID SPACE</span>
       </div>
       <div class="landing-nav-actions">
+        <button id="landingInstallButton" class="landing-install-button" type="button">↓ INSTALL APP</button>
         <button id="landingMenuButton">MAIN MENU</button>
         <button id="landingHowButton">HOW TO PLAY</button>
       </div>
@@ -1837,12 +1860,57 @@ document.getElementById("skillTreeButton").addEventListener("click",()=>{renderV
 document.getElementById("skillTreeBackButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));
 document.getElementById("missionBackButton").addEventListener("click",()=>showScreen("menuScreen"));
-// Let the browser show its native PWA install prompt. Deferring
-// beforeinstallprompt without promptly calling prompt() causes a console warning.
-window.addEventListener("beforeinstallprompt",()=> {
-    const installButton=document.getElementById("installButton");
-    if(installButton) installButton.hidden=true;
+// PWA install: use the browser's native prompt when available, with a helpful
+// browser-menu fallback for Safari/iOS and browsers that do not expose the prompt.
+let voidSpaceInstallPrompt=null;
+const landingInstallButton=document.getElementById("landingInstallButton");
+const menuInstallButton=document.getElementById("installButton");
+function voidSpaceIsInstalled(){
+    return window.matchMedia?.("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+}
+function voidSpaceUpdateInstallButtons(){
+    const installed=voidSpaceIsInstalled();
+    if(landingInstallButton) landingInstallButton.hidden=installed;
+    if(menuInstallButton) menuInstallButton.hidden=installed || !voidSpaceInstallPrompt;
+}
+async function voidSpaceInstallApp(){
+    if(voidSpaceIsInstalled()){
+        alert("VOID SPACE is already installed on this device.");
+        return;
+    }
+    if(voidSpaceInstallPrompt){
+        const promptEvent=voidSpaceInstallPrompt;
+        voidSpaceInstallPrompt=null;
+        await promptEvent.prompt();
+        const choice=await promptEvent.userChoice;
+        if(choice?.outcome==="accepted"){
+            if(landingInstallButton) landingInstallButton.textContent="INSTALLING…";
+        }
+        voidSpaceUpdateInstallButtons();
+        return;
+    }
+    const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+    if(isIOS){
+        alert("To install VOID SPACE: tap Share in Safari, then choose “Add to Home Screen”.");
+    }else{
+        alert("To install VOID SPACE, open your browser menu (⋮ or Share) and choose “Install app” or “Add to Home Screen” if available. If that option is missing, try opening this page in Chrome or Edge over HTTPS.");
+    }
+}
+landingInstallButton?.addEventListener("click",voidSpaceInstallApp);
+menuInstallButton?.addEventListener("click",voidSpaceInstallApp);
+window.addEventListener("beforeinstallprompt",event=>{
+    event.preventDefault();
+    voidSpaceInstallPrompt=event;
+    voidSpaceUpdateInstallButtons();
 });
+window.addEventListener("appinstalled",()=>{
+    voidSpaceInstallPrompt=null;
+    if(landingInstallButton) landingInstallButton.textContent="APP INSTALLED";
+    voidSpaceUpdateInstallButtons();
+});
+voidSpaceUpdateInstallButtons();
 try{if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("/sw.js").catch(()=>{})}catch(e){}
 
 document.getElementById("howBackButton")

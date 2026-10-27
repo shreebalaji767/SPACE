@@ -888,7 +888,7 @@ body::before{
 <div class="screen active landing-screen" id="landingScreen">
   <div class="landing-shell">
     <header class="landing-nav">
-      <div class="landing-brand">
+      <div class="landing-brand" role="link" tabindex="0" aria-label="VOID SPACE home" title="Back to landing page">
         <svg viewBox="0 0 80 80" aria-hidden="true"><defs><linearGradient id="landingShip" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b8f0ff"/><stop offset="1" stop-color="#a69bff"/></linearGradient></defs><rect x="3" y="3" width="74" height="74" rx="20" fill="#0b1230" stroke="#6476bd" stroke-opacity=".6"/><circle cx="40" cy="40" r="27" fill="none" stroke="#6476bd" stroke-dasharray="3 6"/><path d="M57 40 20 23l9 17-9 17z" fill="url(#landingShip)" stroke="#fff" stroke-width="2"/><circle cx="49" cy="40" r="4" fill="#fff"/></svg>
         <span>VOID SPACE</span>
       </div>
@@ -937,15 +937,15 @@ body::before{
 <div class="screen" id="menuScreen">
     <div class="panel">
 
-        <svg class="brand-mark" viewBox="0 0 80 80" role="img" aria-label="VOID SPACE logo" xmlns="http://www.w3.org/2000/svg">
+        <svg class="brand-mark" id="menuHomeLogo" viewBox="0 0 80 80" role="link" tabindex="0" aria-label="VOID SPACE home" title="Back to landing page" xmlns="http://www.w3.org/2000/svg">
             <defs><linearGradient id="shipGlow" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8be2ff"/><stop offset="1" stop-color="#5365ff"/></linearGradient></defs>
             <rect x="3" y="3" width="74" height="74" rx="20" fill="#071329" stroke="#397eb7" stroke-opacity=".65"/>
             <circle cx="40" cy="40" r="27" fill="none" stroke="#28618c" stroke-dasharray="3 6"/>
             <path d="M55 40 21 24l8 16-8 16z" fill="url(#shipGlow)" stroke="#e5f8ff" stroke-width="2" stroke-linejoin="round"/>
             <circle cx="49" cy="40" r="4" fill="#fff"/>
         </svg>
-        <div class="logo">VOID</div>
-        <div class="subtitle">SPACE</div>
+        <div class="logo" id="menuHomeWordmark" role="link" tabindex="0" aria-label="VOID SPACE home" title="Back to landing page">VOID</div>
+        <div class="subtitle" id="menuHomeSubtitle">SPACE</div>
 
         <div class="menu-buttons">
 
@@ -1250,6 +1250,19 @@ function showScreen(id){
     hideScreens();
     document.getElementById(id).classList.add("active");
     try{sessionStorage.setItem("voidSpaceLastScreen",id);}catch(e){}
+}
+
+function goToLanding(){
+    window.stopVoidLandingShowcase?.();
+    showScreen("landingScreen");
+}
+document.querySelector(".landing-brand")?.addEventListener("click",goToLanding);
+document.querySelector(".landing-brand")?.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goToLanding();}});
+for(const el of [document.getElementById("menuHomeLogo"),document.getElementById("menuHomeWordmark"),document.getElementById("menuHomeSubtitle")]){
+    if(!el)continue;
+    el.style.cursor="pointer";
+    el.addEventListener("click",goToLanding);
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goToLanding();}});
 }
 
 
@@ -3607,16 +3620,20 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
    INITIAL STATE
 ========================================================= */
 
-// Restore the last screen on browser refresh instead of forcing the landing page.
+// Fresh visits always start at the landing page. A browser refresh restores the
+// last screen instead of unexpectedly navigating home.
 try{
+  const nav=performance.getEntriesByType("navigation")[0];
+  const isRefresh=!!nav&&nav.type==="reload";
   const lastScreen=sessionStorage.getItem("voidSpaceLastScreen");
-  const validScreen=lastScreen&&screens.includes(lastScreen)&&document.getElementById(lastScreen);
+  const validScreen=isRefresh&&lastScreen&&screens.includes(lastScreen)&&document.getElementById(lastScreen);
   if(validScreen){
-    // A live run is not serialized between reloads; return to the main menu rather than
-    // showing a dead gameplay/pause screen with no active run.
-    const restoreScreen=["landingScreen","menuScreen","howScreen","settingsScreen","hangarScreen","missionScreen","upgradeScreen","skillTreeScreen","modeScreen","campaignScreen","achievementsScreen","saveToolsScreen"].includes(lastScreen)?lastScreen:"menuScreen";
     hideScreens();
-    document.getElementById(restoreScreen).classList.add("active");
+    document.getElementById(lastScreen).classList.add("active");
+  }else if(!isRefresh){
+    sessionStorage.setItem("voidSpaceLastScreen","landingScreen");
+    hideScreens();
+    document.getElementById("landingScreen").classList.add("active");
   }
 }catch(e){}
 loadVoidProfile();createStars();updateHUD();paintMeta();
@@ -3664,7 +3681,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v8";
+const CACHE = "void-space-v9";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

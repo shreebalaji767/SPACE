@@ -1740,6 +1740,10 @@ function shoot(){
             pierce:runUpgrades.pierce
         });
     }
+    for(let d=0;d<Math.min(3,runUpgrades.drone);d++){
+        const side= d%2===0?-1:1, angle=player.angle+side*.32;
+        bullets.push({damage:shotDamage*.65,x:player.x+Math.cos(angle)*18,y:player.y+Math.sin(angle)*18,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:1.1,radius:3,pierce:runUpgrades.pierce});
+    }
 
     createBurst(
         player.x + Math.cos(player.angle)*22,
@@ -2052,6 +2056,7 @@ function distance(a,b){
 
 function updatePlayer(dt){
 
+    if(runUpgrades.regen>0 && player.health<player.maxHealth)player.health=Math.min(player.maxHealth,player.health+runUpgrades.regen*1.15*dt);
     let forward = 0;
     let rotation = 0;
 
@@ -2395,9 +2400,9 @@ function updateEnemies(dt){
 
             if(player.invincible <= 0){
 
-                player.health -= enemy.damage;
+                if(runUpgrades.shield>0){runUpgrades.shield--;player.invincible=.8;createBurst(player.x,player.y,14,3);}
+                else{player.health -= enemy.damage;player.invincible=.8;}
 
-                player.invincible = .8;
 
                 player.vx -= nx*220;
                 player.vy -= ny*220;
@@ -2506,8 +2511,8 @@ function bulletCollisions(){
 
                 if(player.invincible <= 0){
 
-                    if(runUpgrades.shield>0){runUpgrades.shield--;createBurst(player.x,player.y,12,3);}else{player.health -= 12;}
-
+                    if(runUpgrades.shield>0){runUpgrades.shield--;createBurst(player.x,player.y,12,3);}
+                    else{player.health -= 12;}
                     player.invincible = .25;
 
                     createBurst(
@@ -2556,7 +2561,7 @@ function bulletCollisions(){
                 );
 
                 hit = true;
-                if(bullet.pierce>0){bullet.pierce--;continue;}
+                if(bullet.pierce>0){bullet.pierce--;hit=false;continue;}
                 break;
             }
         }

@@ -1676,6 +1676,9 @@ function collectPowerup(power){
 
 function createBurst(x,y,count,power){
 
+    count=window.voidFxEnabled===false?Math.ceil(count*.35):count;
+    const particleCap=window.voidFxEnabled===false?160:420;
+    while(particles.length+count>particleCap)particles.shift();
     for(let i=0;i<count;i++){
 
         const a =
@@ -2997,7 +3000,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v1";
+const CACHE = "void-space-v2";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();
@@ -3023,12 +3026,6 @@ self.addEventListener("fetch", event => {
 def health():
     return "VOID SPACE ONLINE"
 
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "10000"))
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False
-    )
+    app.run(host="0.0.0.0", port=port, debug=False)

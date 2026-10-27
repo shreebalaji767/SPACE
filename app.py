@@ -10,7 +10,9 @@ HTML = r"""
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#02030a">
-<meta name="description" content="VOID SPACE — a neon space survival arcade game. Pilot your ship, defeat enemies and survive endless waves.">
+<meta name="description" content="VOID SPACE — a cinematic neon cyberpunk space roguelite. Defeat bosses, evolve weapons and unlock ships.">
+<meta name="application-name" content="VOID SPACE">
+<link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop stop-color=%22%2363caff%22/%3E%3Cstop offset=%221%22 stop-color=%22%234d55ff%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22%23040818%22/%3E%3Cpath d=%22M43 32 15 19l7 13-7 13z%22 fill=%22url(%23g)%22 stroke=%22%23d8f4ff%22 stroke-width=%222%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2241%22 cy=%2232%22 r=%224%22 fill=%22%23ffffff%22/%3E%3C/svg%3E">
 
 <title>VOID SPACE</title>
@@ -349,10 +351,20 @@ button:active{
     margin:15px 0 25px;
 }
 
-.small{
-    color:#8197ad;
-    font-size:12px;
-}
+.small{color:#8197ad;font-size:12px}
+
+.neon-stats{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:15px 0;color:#b5e5ff;font-size:12px}
+.neon-stats span{border:1px solid #304274;background:#090f25;padding:8px 10px;border-radius:9px}
+.ship-card{border:1px solid #5940a8;border-radius:12px;padding:15px;margin:12px 0;background:rgba(16,25,58,.7)}
+#upgradeChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0}
+.upgrade-card{width:100%;min-height:120px;margin:0;padding:12px;border-color:#b84dff;background:linear-gradient(160deg,#281451,#070d22);white-space:normal}
+.upgrade-card strong{display:block;color:#ff9cec;margin-bottom:10px}
+.upgrade-card span{display:block;color:#c5d8ff;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.5}
+#bombFlash{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0;background:radial-gradient(circle,rgba(255,255,255,.9),rgba(70,220,255,.45) 18%,rgba(195,45,255,.2) 55%,transparent 75%)}
+#bossBar{position:fixed;display:none;top:85px;left:15%;width:70%;height:10px;z-index:11;border:1px solid #ff70ec;border-radius:99px;background:#160a28;overflow:hidden;pointer-events:none}
+#bossBarFill{height:100%;width:100%;background:linear-gradient(90deg,#6b5bff,#ff42d0);box-shadow:0 0 15px #f0f}
+@media(max-width:700px){#upgradeChoices{grid-template-columns:1fr}.upgrade-card{min-height:75px;text-align:left}}
+
 
 #jsError{
     position:fixed;
@@ -503,14 +515,16 @@ button:focus-visible{
                 HOW TO PLAY
             </button>
 
-            <button id="settingsButton">
-                SETTINGS
-            </button>
+            <button id="hangarButton">SHIP HANGAR</button>
+            <button id="missionsButton">MISSIONS & RECORDS</button>
+            <button id="installButton" hidden>INSTALL VOID SPACE</button>
+            <button id="settingsButton">SETTINGS</button>
+            <div class="neon-stats"><span>◈ CREDITS <b id="metaCoins">0</b></span><span>✦ LEVEL <b id="metaLevel">1</b></span><span>🏆 BEST <b id="metaBest">0</b></span></div>
 
         </div>
 
         <div class="small" style="margin-top:25px">
-            NO DATABASE • NO LOCAL STORAGE • FREE
+            NEON ROGUELITE • LOCAL SAVES • FREE
         </div>
 
     </div>
@@ -648,6 +662,10 @@ button:focus-visible{
     </div>
 </div>
 
+<div class="screen" id="hangarScreen"><div class="panel"><h1>SHIP HANGAR</h1><p style="color:#9dcaff;margin:12px">Choose a ship with unique stats.</p><div id="shipCards"></div><button id="hangarBackButton">BACK</button></div></div>
+<div class="screen" id="missionScreen"><div class="panel"><h1>MISSIONS & RECORDS</h1><div id="missionContent" style="line-height:2;color:#c7d9ff;margin:20px 0"></div><button id="missionBackButton">BACK</button></div></div>
+<div class="screen" id="upgradeScreen"><div class="panel"><h1>LEVEL UP // CHOOSE AN UPGRADE</h1><p style="color:#9dcaff;margin-top:10px">Pick a prototype to change your build.</p><div id="upgradeChoices"></div></div></div>
+<div id="bombFlash"></div><div id="bossBar"><div id="bossBarFill"></div></div>
 <!-- GAME OVER -->
 <div class="screen" id="gameOverScreen">
     <div class="panel">
@@ -763,7 +781,7 @@ const screens = [
     "howScreen",
     "settingsScreen",
     "pauseScreen",
-    "gameOverScreen"
+    "gameOverScreen","hangarScreen","missionScreen","upgradeScreen"
 ];
 
 function hideScreens(){
@@ -958,9 +976,7 @@ function createStars(){
 
 function resetGame(){
 
-    score = 0;
-    wave = 1;
-    kills = 0;
+    score=0;wave=1;kills=0;runCoins=0;runXP=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0};
 
     waveTimer = 0;
     enemySpawnTimer = 0;
@@ -979,8 +995,7 @@ function resetGame(){
 
     player.angle = 0;
 
-    player.health = 100;
-    player.energy = 100;
+    const ship=ships[selectedShip]||ships.striker;player.maxHealth=ship.hp;player.health=ship.hp;player.energy=100;player.shipSpeed=ship.speed;player.shipDamage=ship.damage;
 
     player.fireCooldown = 0;
     player.boostCooldown = 0;
@@ -1043,8 +1058,7 @@ function endGame(){
     document.getElementById("finalWave").textContent =
         wave;
 
-    document.getElementById("finalKills").textContent =
-        kills;
+    document.getElementById("finalKills").textContent=kills;bestScore=Math.max(bestScore,score);bestWave=Math.max(bestWave,wave);saveVoidProfile();paintMeta();
 
     sound(100,.5,"sawtooth",.05);
 
@@ -1087,10 +1101,14 @@ document.getElementById("howButton")
         showScreen("howScreen");
     });
 
-document.getElementById("settingsButton")
-    .addEventListener("click",()=>{
-        showScreen("settingsScreen");
-    });
+document.getElementById("settingsButton").addEventListener("click",()=>showScreen("settingsScreen"));
+document.getElementById("hangarButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
+document.getElementById("missionsButton").addEventListener("click",()=>{renderVoidMissions();showScreen("missionScreen")});
+document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));
+document.getElementById("missionBackButton").addEventListener("click",()=>showScreen("menuScreen"));
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;document.getElementById("installButton").hidden=false});
+document.getElementById("installButton").addEventListener("click",async()=>{if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;document.getElementById("installButton").hidden=true}});
+try{if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("/sw.js").catch(()=>{})}catch(e){}
 
 document.getElementById("howBackButton")
     .addEventListener("click",()=>{
@@ -1372,7 +1390,7 @@ function shoot(){
 
     player.energy -= 2;
 
-    player.fireCooldown = 0.12;
+    player.fireCooldown=Math.max(.055,.12-runUpgrades.fire*.012);
 
     const speed = 720;
 
@@ -1423,7 +1441,7 @@ function useBomb(){
 
     player.bombCooldown = 8;
 
-    const radius = 260;
+    const radius=Math.min(Math.max(W,H)*.62,520);bombFx={x:player.x,y:player.y,r:12,max:radius,life:.95};const flash=document.getElementById("bombFlash");flash.style.transition="none";flash.style.opacity=".95";requestAnimationFrame(()=>{flash.style.transition="opacity .9s ease-out";flash.style.opacity="0"});
 
     for(const enemy of enemies){
 
@@ -1434,7 +1452,7 @@ function useBomb(){
 
         if(d < radius){
 
-            enemy.health -= 90;
+            enemy.health-=(90+runUpgrades.damage*22)*(player.shipDamage||1);
 
             createBurst(
                 enemy.x,
@@ -1482,15 +1500,10 @@ function spawnEnemy(){
         y = H+50;
     }
 
-    const roll = Math.random();
+    const roll=Math.random();
+    let type="fighter";
 
-    let type = "fighter";
-
-    if(roll < .12 && wave >= 3){
-        type = "tank";
-    }else if(roll < .30 && wave >= 2){
-        type = "fast";
-    }
+    if(roll<.10&&wave>=4)type="sniper";else if(roll<.22&&wave>=3)type="tank";else if(roll<.42&&wave>=2)type="fast";
 
     let enemy;
 
@@ -1524,6 +1537,8 @@ function spawnEnemy(){
             score:40
         };
 
+    }else if(type==="sniper"){
+        enemy={x,y,vx:0,vy:0,radius:15,speed:65+wave*1.5,health:38+wave*6,maxHealth:38+wave*6,damage:14,type,score:95,fireTimer:1.2};
     }else{
 
         enemy = {
@@ -1590,12 +1605,7 @@ function spawnBoss(){
 
 function spawnPowerup(){
 
-    const types = [
-        "health",
-        "energy",
-        "rapid",
-        "bomb"
-    ];
+    const types=["health","energy","rapid","bomb","weapon","shield","coins"];
 
     powerups.push({
 
@@ -1614,7 +1624,10 @@ function spawnPowerup(){
 
 function collectPowerup(power){
 
-    if(power.type === "health"){
+    if(power.type==="weapon"){runUpgrades.damage++;}
+    else if(power.type==="shield"){player.invincible=Math.max(player.invincible,5);}
+    else if(power.type==="coins"){awardVoidCoins(40);}
+    else if(power.type === "health"){
 
         player.health =
             Math.min(
@@ -1802,7 +1815,7 @@ function updatePlayer(dt){
        FORWARD / BACKWARD
     */
 
-    const acceleration = 310;
+    const acceleration=310*(player.shipSpeed||1)*(1+runUpgrades.engine*.08);
 
     player.vx +=
         Math.cos(player.angle)
@@ -2032,6 +2045,8 @@ function updateEnemies(dt){
                 sound(100,.15,"sawtooth",.025);
             }
 
+        }else if(enemy.type==="sniper"){
+            enemy.vx=nx*enemy.speed*.55;enemy.vy=ny*enemy.speed*.55;enemy.x+=enemy.vx*dt;enemy.y+=enemy.vy*dt;enemy.fireTimer-=dt;if(enemy.fireTimer<=0){enemy.fireTimer=1.4;bullets.push({x:enemy.x,y:enemy.y,vx:nx*300,vy:ny*300,life:4,radius:5,enemyBullet:true});}
         }else{
 
             enemy.vx = nx*enemy.speed;
@@ -2084,8 +2099,7 @@ function updateEnemies(dt){
 
         if(enemy.health <= 0){
 
-            score += enemy.score;
-            kills++;
+            score+=enemy.score;kills++;awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
 
             createBurst(
                 enemy.x,
@@ -2096,7 +2110,7 @@ function updateEnemies(dt){
 
             if(enemy.boss){
 
-                score += 2000;
+                score+=2000;awardVoidCoins(250+wave*10);awardVoidXP(250);
 
                 for(let p=0;p<3;p++){
                     spawnPowerup();
@@ -2200,8 +2214,7 @@ function bulletCollisions(){
                 enemy.radius+bullet.radius
             ){
 
-                enemy.health -=
-                    enemy.boss ? 16 : 30;
+                enemy.health-=(bullet.damage||30)*(player.shipDamage||1)*(1+runUpgrades.damage*.4);
 
                 createBurst(
                     bullet.x,
@@ -2305,11 +2318,8 @@ function updateWave(dt){
 
         sound(220,.3,"square",.03);
 
-        if(wave % 5 === 0){
-
-            spawnBoss();
-
-        }
+        if(wave%5===0)spawnBoss();
+        if(wave%3===0)offerVoidUpgrades();
     }
 
     enemySpawnTimer -= dt;
@@ -2399,8 +2409,7 @@ function update(dt){
 
 function drawBackground(){
 
-    ctx.fillStyle = "#02030a";
-    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#02030a";ctx.fillRect(0,0,W,H);const neb=ctx.createRadialGradient(W*.72,H*.28,0,W*.72,H*.28,Math.max(W,H)*.72);neb.addColorStop(0,"rgba(105,30,160,.18)");neb.addColorStop(.5,"rgba(15,70,130,.07)");neb.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=neb;ctx.fillRect(0,0,W,H);
 
     /*
        Stars
@@ -2597,11 +2606,7 @@ function drawEnemy(enemy){
     ctx.shadowColor =
         enemy.boss ? "#c040ff" : "#ff4f6d";
 
-    ctx.fillStyle =
-        enemy.boss ? "#8f42bd" :
-        enemy.type === "tank" ? "#8e2938" :
-        enemy.type === "fast" ? "#e54a61" :
-        "#bd354f";
+    ctx.fillStyle=enemy.boss?"#a23dff":enemy.type==="sniper"?"#ffb347":enemy.type==="tank"?"#8e2938":enemy.type==="fast"?"#e54a61":"#bd354f";
 
     ctx.beginPath();
 
@@ -2680,9 +2685,8 @@ function drawEnemy(enemy){
 
 function drawEnemies(){
 
-    for(const enemy of enemies){
-        drawEnemy(enemy);
-    }
+    for(const enemy of enemies)drawEnemy(enemy);
+    const boss=enemies.find(e=>e.boss),bar=document.getElementById("bossBar");if(bar){bar.style.display=boss&&running?"block":"none";if(boss)document.getElementById("bossBarFill").style.width=Math.max(0,boss.health/boss.maxHealth*100)+"%";}
 }
 
 
@@ -2738,7 +2742,7 @@ function drawPowerups(){
         if(p.type === "health") symbol = "+";
         if(p.type === "energy") symbol = "E";
         if(p.type === "rapid") symbol = "R";
-        if(p.type === "bomb") symbol = "B";
+        if(p.type === "bomb") symbol = "B";if(p.type==="weapon")symbol="W";if(p.type==="shield")symbol="S";if(p.type==="coins")symbol="¢";
 
         ctx.fillText(symbol,0,1);
 
@@ -2829,7 +2833,7 @@ function drawAim(){
 function draw(){
 
     drawBackground();
-
+    if(bombFx){bombFx.life-=.016;bombFx.r=bombFx.max*(1-Math.pow(Math.max(0,bombFx.life/.95),2));ctx.save();ctx.globalAlpha=Math.max(0,bombFx.life/.95);ctx.strokeStyle="#8cf7ff";ctx.lineWidth=5;ctx.shadowBlur=35;ctx.shadowColor="#f0f";ctx.beginPath();ctx.arc(bombFx.x,bombFx.y,bombFx.r,0,Math.PI*2);ctx.stroke();ctx.restore();if(bombFx.life<=0)bombFx=null;}
     drawParticles();
     drawPowerups();
     drawBullets();
@@ -2907,6 +2911,27 @@ function gameLoop(now){
 requestAnimationFrame(gameLoop);
 
 
+
+/* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
+let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
+let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0},installPrompt=null,bombFx=null;
+const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
+function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=p.ship||"striker";ownedShips=p.owned||["striker"];bestScore=p.best||0;bestWave=p.wave||1;}catch(e){}}
+function saveVoidProfile(){try{localStorage.setItem("voidSpaceProfile",JSON.stringify({coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,best:bestScore,wave:bestWave}));}catch(e){}}
+function paintMeta(){const vals={metaCoins:bankCoins,metaLevel:pilotLevel,metaBest:bestScore.toLocaleString()};for(const id in vals){const el=document.getElementById(id);if(el)el.textContent=vals[id];}}
+function awardVoidXP(n){runXP+=n;xpProgress+=n;while(xpProgress>=xpNext){xpProgress-=xpNext;pilotLevel++;xpNext=Math.round(xpNext*1.2);offerVoidUpgrades();}saveVoidProfile();paintMeta();}
+function awardVoidCoins(n){runCoins+=n;bankCoins+=n;saveVoidProfile();paintMeta();}
+const runUpgradeDefs=[
+["damage","OVERCHARGED CORE","+12 weapon damage per stack."],
+["fire","RAPID-FIRE COILS","Shoot faster."],
+["engine","ION AFTERBURNER","+8% thrust and mobility."],
+["hull","REINFORCED HULL","+20 maximum health and heal 20."],
+["critical","PRISM MULTI-SHOT","More critical damage; extra shots at higher stacks."]
+];
+function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>Math.random()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}paused=false;hideScreens();};host.appendChild(b);});}
+function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
+function renderVoidMissions(){document.getElementById("missionContent").innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p>";}
+
 /* =========================================================
    ERROR DISPLAY
 ========================================================= */
@@ -2933,8 +2958,7 @@ window.addEventListener("error",(event)=>{
    INITIAL STATE
 ========================================================= */
 
-createStars();
-updateHUD();
+loadVoidProfile();createStars();updateHUD();paintMeta();
 
 </script>
 

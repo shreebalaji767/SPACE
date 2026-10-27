@@ -989,7 +989,8 @@ body::before{
     </div>
 </div>
 
-<div class="screen" id="hangarScreen"><div class="panel"><h1>SHIP HANGAR</h1><p style="color:#9dcaff;margin:12px">Choose a ship with unique stats.</p><div id="shipCards"></div><button id="hangarBackButton">BACK</button></div></div>
+<div class="screen" id="hangarScreen"><div class="panel"><h1>SHIP HANGAR</h1><p style="color:#9dcaff;margin:12px">Choose a ship with unique stats.</p><div id="shipCards"></div><button id="skillTreeButton">SHIP SKILL TREE</button><button id="hangarBackButton">BACK</button></div></div>
+<div class="screen" id="skillTreeScreen"><div class="panel"><h1>SHIP SKILL TREE</h1><p style="color:#9dcaff;margin:12px">Permanent upgrades for the currently selected ship. Ranks are saved on this device.</p><div class="neon-stats"><span>◈ CREDITS <b id="skillCoins">0</b></span><span>SHIP <b id="skillShipName">NEON STRIKER</b></span></div><div id="skillTreeCards"></div><button id="skillTreeBackButton">BACK TO HANGAR</button></div></div>
 <div class="screen" id="missionScreen"><div class="panel"><h1>MISSIONS & RECORDS</h1><div id="missionContent" style="line-height:2;color:#c7d9ff;margin:20px 0"></div><button id="missionBackButton">BACK</button></div></div>
 <div class="screen" id="upgradeScreen"><div class="panel"><h1>LEVEL UP // CHOOSE AN UPGRADE</h1><p style="color:#9dcaff;margin-top:10px">Pick a prototype to change your build.</p><div id="upgradeChoices"></div></div></div>
 <div id="bombFlash"></div><div id="bossBar"><div id="bossBarFill"></div></div>
@@ -1108,7 +1109,7 @@ const screens = [
     "howScreen",
     "settingsScreen",
     "pauseScreen",
-    "gameOverScreen","hangarScreen","missionScreen","upgradeScreen"
+    "gameOverScreen","hangarScreen","missionScreen","upgradeScreen","skillTreeScreen"
 ];
 
 function hideScreens(){
@@ -1322,7 +1323,7 @@ function resetGame(){
 
     player.angle = 0;
 
-    const ship=ships[selectedShip]||ships.striker;player.maxHealth=ship.hp;player.health=ship.hp;player.energy=100;player.shipSpeed=ship.speed;player.shipDamage=ship.damage;
+    const ship=ships[selectedShip]||ships.striker;const skill=shipSkills[selectedShip]||{hull:0,thrusters:0,reactor:0,weapon:0};player.maxHealth=ship.hp+skill.hull*8;player.health=player.maxHealth;player.energy=Math.min(player.maxEnergy||100,100+skill.reactor*5);player.shipSpeed=ship.speed*(1+skill.thrusters*.035);player.shipDamage=ship.damage*(1+skill.weapon*.04);
 
     player.fireCooldown = 0;
     player.boostCooldown = 0;
@@ -1435,6 +1436,8 @@ document.getElementById("shakeToggle")?.addEventListener("click",e=>{window.void
 document.getElementById("fxToggle")?.addEventListener("click",e=>{window.voidFxEnabled=!(window.voidFxEnabled!==false);e.currentTarget.textContent=window.voidFxEnabled?"FULL":"LITE";saveVoidProfile();});
 document.getElementById("hangarButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("missionsButton").addEventListener("click",()=>{renderVoidMissions();showScreen("missionScreen")});
+document.getElementById("skillTreeButton").addEventListener("click",()=>{renderVoidSkillTree();showScreen("skillTreeScreen")});
+document.getElementById("skillTreeBackButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));
 document.getElementById("missionBackButton").addEventListener("click",()=>showScreen("menuScreen"));
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;document.getElementById("installButton").hidden=false});
@@ -1725,8 +1728,8 @@ function shoot(){
 
     const speed = 720;
 
-    const shotCount=runUpgrades.critical>=4?3:(runUpgrades.critical>=2?2:1);
-    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(Math.random()<Math.min(.35,runUpgrades.critical*.05)?2:1);
+    const evolved=voidWeaponEvolution();const shotCount=(runUpgrades.critical>=4?3:(runUpgrades.critical>=2?2:1))+(evolved==="STARSTORM"?2:0);
+    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(Math.random()<Math.min(.35,runUpgrades.critical*.05)?2:1)*(evolved==="PLASMA SWARM"?1.35:1);
     for(let i=0;i<shotCount;i++){
         const angle=player.angle+(i-(shotCount-1)/2)*.12;
         bullets.push({
@@ -1737,12 +1740,12 @@ function shoot(){
             vy:Math.sin(angle)*speed+player.vy*.2,
             life:1.1,
             radius:3,
-            pierce:runUpgrades.pierce
+            pierce:runUpgrades.pierce+(evolved==="PHASE LANCE"?2:0)
         });
     }
     for(let d=0;d<Math.min(3,runUpgrades.drone);d++){
         const side= d%2===0?-1:1, angle=player.angle+side*.32;
-        bullets.push({damage:shotDamage*.65,x:player.x+Math.cos(angle)*18,y:player.y+Math.sin(angle)*18,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:1.1,radius:3,pierce:runUpgrades.pierce});
+        bullets.push({damage:shotDamage*.65,x:player.x+Math.cos(angle)*18,y:player.y+Math.sin(angle)*18,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:1.1,radius:3,pierce:runUpgrades.pierce+(evolved==="PHASE LANCE"?2:0)});
     }
 
     createBurst(
@@ -2416,7 +2419,6 @@ function updateEnemies(dt){
 
                 sound(70,.18,"sawtooth",.04);
 
-                if(runUpgrades.shield>0){runUpgrades.shield--;player.health=Math.min(player.maxHealth,player.health+0);createBurst(player.x,player.y,14,3);}
                 if(!enemy.boss){
                     enemy.health = 0;
                 }
@@ -3254,10 +3256,10 @@ requestAnimationFrame(gameLoop);
 
 /* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
-let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
+let selectedShip="striker",ownedShips=["striker"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
-function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";bestScore=p.best||0;bestWave=p.wave||1;window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){}}
-function saveVoidProfile(){try{const profile={version:1,savedAt:Date.now(),coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,best:bestScore,wave:bestWave,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
+function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";shipSkills=p.shipSkills&&typeof p.shipSkills==="object"?p.shipSkills:{};for(const id of Object.keys(ships)){if(!shipSkills[id]||typeof shipSkills[id]!=="object")shipSkills[id]={};for(const k of ["hull","thrusters","reactor","weapon"])shipSkills[id][k]=Math.max(0,Math.min(5,Number(shipSkills[id][k])||0));}bestScore=p.best||0;bestWave=p.wave||1;window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){shipSkills={};for(const id of Object.keys(ships))shipSkills[id]={hull:0,thrusters:0,reactor:0,weapon:0};}}
+function saveVoidProfile(){try{const profile={version:2,savedAt:Date.now(),coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,shipSkills,best:bestScore,wave:bestWave,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
 window.addEventListener("pagehide",saveVoidProfile);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveVoidProfile();});
 function paintMeta(){const vals={metaCoins:bankCoins,metaLevel:pilotLevel,metaBest:bestScore.toLocaleString()};for(const id in vals){const el=document.getElementById(id);if(el)el.textContent=vals[id];}}

@@ -1857,26 +1857,26 @@ function useBomb(){
 function spawnEnemy(){
 
     const side =
-        Math.floor(gameRandom()*4);
+        Math.floor(challengeRandom()*4);
 
     let x;
     let y;
 
     if(side === 0){
         x = -50;
-        y = gameRandom()*H;
+        y = challengeRandom()*H;
     }else if(side === 1){
         x = W+50;
-        y = gameRandom()*H;
+        y = challengeRandom()*H;
     }else if(side === 2){
-        x = gameRandom()*W;
+        x = challengeRandom()*W;
         y = -50;
     }else{
-        x = gameRandom()*W;
+        x = challengeRandom()*W;
         y = H+50;
     }
 
-    const roll=gameRandom();
+    const roll=challengeRandom();
     let type="fighter";
 
     if(roll<.10&&wave>=4)type="sniper";else if(roll<.22&&wave>=3)type="tank";else if(roll<.42&&wave>=2)type="fast";
@@ -1977,19 +1977,20 @@ function spawnBoss(){
    POWERUPS
 ========================================================= */
 
-function spawnPowerup(){
+function spawnPowerup(seeded=false){
+    const rnd=seeded&&currentGameMode==="daily"?challengeRandom:gameRandom;
 
     const types=["health","energy","rapid","bomb","weapon","shield","coins"];
 
     powerups.push({
 
-        x:60+gameRandom()*(W-120),
-        y:60+gameRandom()*(H-120),
+        x:60+rnd()*(W-120),
+        y:60+rnd()*(H-120),
 
         radius:13,
 
         type:
-            types[Math.floor(gameRandom()*types.length)],
+            types[Math.floor(rnd()*types.length)],
 
         life:12
 
@@ -2719,7 +2720,7 @@ function updateWave(dt){
             10+gameRandom()*8;
 
         if(powerups.length < 3){
-            spawnPowerup();
+            spawnPowerup(true);
         }
     }
 }
@@ -3291,7 +3292,8 @@ let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScor
 let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVictory=false,runWeaponIndex=0,weaponLevel=0,asteroids=[],hazardTimer=5,cinematicSlow=0,screenFlash=0,toastTimer=0,toastMessage="",toastColor="#8be2ff",dailyRngState=1;
 let unlockedAchievements=[],lifetimeKills=0,bossesDefeated=0,campaignWins=0,campaignProgress={},modeRecords={};
 function seedFromDate(){const day=new Date().toISOString().slice(0,10);let h=2166136261;for(let i=0;i<day.length;i++){h^=day.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0||1;}
-function gameRandom(){if(currentGameMode!=="daily")return Math.random();dailyRngState=(dailyRngState+0x6D2B79F5)|0;let t=dailyRngState;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;}
+function gameRandom(){return Math.random();}
+function challengeRandom(){if(currentGameMode!=="daily")return Math.random();dailyRngState=(dailyRngState+0x6D2B79F5)|0;let t=dailyRngState;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;}
 
 let selectedShip="striker",ownedShips=["striker"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
@@ -3387,9 +3389,9 @@ function renderSaveTools(){const el=document.getElementById("saveStatus");if(el)
 function exportVoidSave(){saveVoidProfile();const raw=localStorage.getItem("voidSpaceProfile");if(!raw){toastNotice("SAVE EXPORT FAILED","#ff8b9b");return;}const blob=new Blob([raw],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="void-space-save-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);toastNotice("SAVE BACKUP EXPORTED");}
 function importVoidSave(event){const file=event.target.files&&event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(String(reader.result||""));if(!p||typeof p!=="object"||(!("coins" in p)&&!("owned" in p)&&!("ship" in p)))throw new Error("This is not a VOID SPACE profile.");localStorage.setItem("voidSpaceProfile",JSON.stringify(p));toastNotice("SAVE RESTORED — RELOADING");setTimeout(()=>location.reload(),500);}catch(err){const status=document.getElementById("saveStatus");if(status)status.textContent="Import failed: "+err.message;}};reader.onerror=()=>{const status=document.getElementById("saveStatus");if(status)status.textContent="Could not read the selected file.";};reader.readAsText(file);event.target.value="";}
 function spawnAsteroid(){
- const side=Math.floor(gameRandom()*4);let x=side===0?-35:side===1?W+35:gameRandom()*W,y=side===2?-35:side===3?H+35:gameRandom()*H;
- const a=Math.atan2(H/2-y,W/2-x)+(gameRandom()-.5)*1.4,speed=25+gameRandom()*55,radius=16+gameRandom()*22;
- asteroids.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,radius,health:radius*2.2,maxHealth:radius*2.2,rotation:gameRandom()*Math.PI*2,spin:(gameRandom()-.5)*1.5,contactCooldown:0,type:currentRoute});
+ const side=Math.floor(challengeRandom()*4);let x=side===0?-35:side===1?W+35:challengeRandom()*W,y=side===2?-35:side===3?H+35:challengeRandom()*H;
+ const a=Math.atan2(H/2-y,W/2-x)+(challengeRandom()-.5)*1.4,speed=25+challengeRandom()*55,radius=16+challengeRandom()*22;
+ asteroids.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,radius,health:radius*2.2,maxHealth:radius*2.2,rotation:challengeRandom()*Math.PI*2,spin:(challengeRandom()-.5)*1.5,contactCooldown:0,type:currentRoute});
 }
 function updateHazards(dt){
  for(let i=asteroids.length-1;i>=0;i--){const rock=asteroids[i];rock.x+=rock.vx*dt;rock.y+=rock.vy*dt;rock.rotation+=rock.spin*dt;rock.contactCooldown=Math.max(0,rock.contactCooldown-dt);

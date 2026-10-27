@@ -6,7 +6,7 @@ A free, browser-based neon cyberpunk space-survival arcade game with a premium-s
 
 ## Features
 
-- **Recorded cinematic trailer:** the landing page plays `/static/void-space-gameplay.webm` on loop. Regular visitors do not start the game simulation, autopilot, or gameplay animation on the landing page; only the isolated `?record=1` capture workflow runs the simulation to produce the footage. **Play Now** starts real gameplay only after a deliberate click.
+- **Recorded cinematic trailer:** the landing page plays `/static/void-space-gameplay.webm` on loop. Regular visitors do not start the game simulation, autopilot, or gameplay animation on the landing page; only the isolated `?record=1` capture workflow runs the simulation to produce the footage. That capture starts in Boss Rush and seeds a supporting enemy wave so the loop visibly features active enemy combat and a live boss fight. **Play Now** starts real gameplay only after a deliberate click.
 - **Arcade combat:** fast fighters, tanks, ranged snipers, enemy projectiles, escalating waves, and three named boss variants.
 - **Multi-phase bosses:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health, with phase-transition slow motion, flashes, unique colors, and a live boss bar.
 - **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.

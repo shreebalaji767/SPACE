@@ -361,8 +361,20 @@ button:active{
 .upgrade-card strong{display:block;color:#ff9cec;margin-bottom:10px}
 .upgrade-card span{display:block;color:#c5d8ff;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.5}
 #bombFlash{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0;background:radial-gradient(circle,rgba(255,255,255,.9),rgba(70,220,255,.45) 18%,rgba(195,45,255,.2) 55%,transparent 75%)}
-#bossBar{position:fixed;display:none;top:85px;left:15%;width:70%;height:10px;z-index:11;border:1px solid #ff70ec;border-radius:99px;background:#160a28;overflow:hidden;pointer-events:none}
-#bossBarFill{height:100%;width:100%;background:linear-gradient(90deg,#6b5bff,#ff42d0);box-shadow:0 0 15px #f0f}
+#bossBar{position:fixed;display:none;top:85px;left:15%;width:70%;height:14px;z-index:11;border:1px solid #ff70ec;border-radius:99px;background:#160a28;overflow:visible;pointer-events:none}
+#bossName{position:absolute;bottom:17px;left:0;width:100%;text-align:center;color:#f8d5ff;font-size:11px;font-weight:900;letter-spacing:.2em;text-shadow:0 0 12px #f0f}
+#bossBarFill{height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#6b5bff,#ff42d0);box-shadow:0 0 15px #f0f;transition:width .12s linear}
+#cinematicFlash{position:fixed;inset:0;z-index:25;pointer-events:none;opacity:0;background:radial-gradient(circle,rgba(210,230,255,.35),rgba(140,60,255,.18),transparent 70%)}
+#toastNotice{position:fixed;left:50%;top:18%;transform:translate(-50%,-8px);z-index:40;opacity:0;pointer-events:none;padding:12px 20px;border:1px solid rgba(139,226,255,.65);border-radius:14px;background:rgba(4,9,25,.94);color:#c8f7ff;box-shadow:0 0 28px rgba(100,200,255,.2);font-weight:900;letter-spacing:.08em;text-align:center;transition:opacity .18s,transform .18s;max-width:90vw}
+#toastNotice.show{opacity:1;transform:translate(-50%,0)}
+.feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+.feature-grid button{min-height:78px;text-align:left;line-height:1.4}
+.feature-grid small{display:block;color:#9dcaff;font-size:11px;margin-top:5px;font-weight:500}
+.achievement-card{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid rgba(160,180,255,.16);border-radius:12px;padding:12px;margin:8px 0;background:rgba(20,30,60,.35)}
+.achievement-card.locked{opacity:.52;filter:saturate(.35)}
+.achievement-card strong{display:block;color:#c4f6ff}
+.achievement-card small{display:block;color:#9eafd0;margin-top:4px}
+@media(max-width:560px){.feature-grid{grid-template-columns:1fr}#bossBar{top:118px;left:10%;width:80%}#toastNotice{top:24%}}
 @media(max-width:700px){#upgradeChoices{grid-template-columns:1fr}.upgrade-card{min-height:75px;text-align:left}}
 
 
@@ -794,6 +806,9 @@ body::before{
             <div>SCORE <b id="score">0</b></div>
             <div>WAVE <b id="wave">1</b></div>
             <div>BUILD <b id="evolutionLabel">STANDARD</b></div>
+            <div>WEAPON <b id="weaponLabel">PULSE</b></div>
+            <div>MODE <b id="modeLabel">SURVIVAL</b></div>
+            <div id="runTimerRow">TIME <b id="runTimerLabel">00:00</b></div>
             <div>KILLS <b id="kills">0</b></div>
         </div>
 
@@ -837,6 +852,9 @@ body::before{
             <button class="primary" id="startButton">
                 START GAME
             </button>
+            <button id="modeSelectButton">GAME MODES</button>
+            <button id="achievementsButton">ACHIEVEMENTS</button>
+            <button id="saveToolsButton">SAVE BACKUP / RESTORE</button>
 
             <button id="howButton">
                 HOW TO PLAY
@@ -993,8 +1011,14 @@ body::before{
 <div class="screen" id="hangarScreen"><div class="panel"><h1>SHIP HANGAR</h1><p style="color:#9dcaff;margin:12px">Choose a ship with unique stats.</p><div id="shipCards"></div><button id="skillTreeButton">SHIP SKILL TREE</button><button id="hangarBackButton">BACK</button></div></div>
 <div class="screen" id="skillTreeScreen"><div class="panel"><h1>SHIP SKILL TREE</h1><p style="color:#9dcaff;margin:12px">Permanent upgrades for the currently selected ship. Ranks are saved on this device.</p><div class="neon-stats"><span>◈ CREDITS <b id="skillCoins">0</b></span><span>SHIP <b id="skillShipName">NEON STRIKER</b></span></div><div id="skillTreeCards"></div><button id="skillTreeBackButton">BACK TO HANGAR</button></div></div>
 <div class="screen" id="missionScreen"><div class="panel"><h1>MISSIONS & RECORDS</h1><div id="missionContent" style="line-height:2;color:#c7d9ff;margin:20px 0"></div><button id="missionBackButton">BACK</button></div></div>
+<div class="screen" id="modeScreen"><div class="panel"><h1>SELECT GAME MODE</h1><p style="color:#9dcaff;margin:10px">Choose your challenge. All modes are free.</p><div class="feature-grid">
+<button data-mode="survival">SURVIVAL <small>Classic escalating waves</small></button><button data-mode="endless">ENDLESS <small>Push your highest wave</small></button><button data-mode="bossrush">BOSS RUSH <small>Boss encounters every wave</small></button><button data-mode="timeattack">TIME ATTACK <small>Three minutes to score</small></button><button data-mode="hardcore">HARDCORE <small>One life, no second chances</small></button><button id="campaignOpenButton">CAMPAIGN <small>Clear three sectors and their bosses</small></button>
+</div><button id="modeBackButton">BACK</button></div></div>
+<div class="screen" id="campaignScreen"><div class="panel"><h1>SECTOR CAMPAIGN</h1><p style="color:#9dcaff;margin:10px">Choose a route. Clear wave 8 and survive the sector.</p><div class="feature-grid"><button data-route="derelict">DERELICT BELT <small>Asteroids and wreckage</small></button><button data-route="ionstorm">ION STORM <small>Charged debris field</small></button><button data-route="singularity">SINGULARITY EDGE <small>Dark matter hazards</small></button></div><button id="campaignBackButton">BACK TO MODES</button></div></div>
+<div class="screen" id="achievementsScreen"><div class="panel"><h1>ACHIEVEMENTS</h1><p style="color:#9dcaff;margin:10px">Earn badges through play. Progress is stored locally.</p><div id="achievementCards"></div><button id="achievementsBackButton">BACK</button></div></div>
+<div class="screen" id="saveToolsScreen"><div class="panel"><h1>LOCAL SAVE TOOLS</h1><p style="color:#9dcaff;margin:10px">Export or restore a VOID SPACE profile. No account or server database.</p><div id="saveStatus" style="margin:16px;color:#c7d9ff"></div><button id="exportSaveButton">EXPORT SAVE JSON</button><button id="importSaveButton">IMPORT SAVE JSON</button><input id="importSaveFile" type="file" accept="application/json,.json" hidden><button id="saveToolsBackButton">BACK</button></div></div>
 <div class="screen" id="upgradeScreen"><div class="panel"><h1>LEVEL UP // CHOOSE AN UPGRADE</h1><p style="color:#9dcaff;margin-top:10px">Pick a prototype to change your build.</p><div id="upgradeChoices"></div></div></div>
-<div id="bombFlash"></div><div id="bossBar"><div id="bossBarFill"></div></div>
+<div id="bombFlash"></div><div id="bossBar"><div id="bossName">BOSS</div><div id="bossBarFill"></div></div><div id="cinematicFlash"></div><div id="toastNotice" role="status" aria-live="polite"></div>
 <!-- GAME OVER -->
 <div class="screen" id="gameOverScreen">
     <div class="panel">
@@ -1110,7 +1134,7 @@ const screens = [
     "howScreen",
     "settingsScreen",
     "pauseScreen",
-    "gameOverScreen","hangarScreen","missionScreen","upgradeScreen","skillTreeScreen"
+    "gameOverScreen","hangarScreen","missionScreen","upgradeScreen","skillTreeScreen","modeScreen","campaignScreen","achievementsScreen","saveToolsScreen"
 ];
 
 function hideScreens(){
@@ -1437,6 +1461,19 @@ document.getElementById("shakeToggle")?.addEventListener("click",e=>{window.void
 document.getElementById("fxToggle")?.addEventListener("click",e=>{window.voidFxEnabled=!(window.voidFxEnabled!==false);e.currentTarget.textContent=window.voidFxEnabled?"FULL":"LITE";saveVoidProfile();});
 document.getElementById("hangarButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("missionsButton").addEventListener("click",()=>{renderVoidMissions();showScreen("missionScreen")});
+document.getElementById("modeSelectButton").addEventListener("click",()=>showScreen("modeScreen"));
+document.getElementById("modeBackButton").addEventListener("click",()=>showScreen("menuScreen"));
+document.getElementById("campaignOpenButton").addEventListener("click",()=>showScreen("campaignScreen"));
+document.getElementById("campaignBackButton").addEventListener("click",()=>showScreen("modeScreen"));
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{currentGameMode=b.dataset.mode;currentRoute="derelict";startGame();}));
+document.querySelectorAll("[data-route]").forEach(b=>b.addEventListener("click",()=>{currentGameMode="campaign";currentRoute=b.dataset.route;startGame();}));
+document.getElementById("achievementsButton").addEventListener("click",()=>{renderVoidAchievements();showScreen("achievementsScreen")});
+document.getElementById("achievementsBackButton").addEventListener("click",()=>showScreen("menuScreen"));
+document.getElementById("saveToolsButton").addEventListener("click",()=>{renderSaveTools();showScreen("saveToolsScreen")});
+document.getElementById("saveToolsBackButton").addEventListener("click",()=>showScreen("menuScreen"));
+document.getElementById("exportSaveButton").addEventListener("click",exportVoidSave);
+document.getElementById("importSaveButton").addEventListener("click",()=>document.getElementById("importSaveFile").click());
+document.getElementById("importSaveFile").addEventListener("change",importVoidSave);
 document.getElementById("skillTreeButton").addEventListener("click",()=>{renderVoidSkillTree();showScreen("skillTreeScreen")});
 document.getElementById("skillTreeBackButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));

@@ -3605,6 +3605,9 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
  if(recordMode)document.body.classList.add("gameplay-record-mode");
  const preview=document.getElementById("previewCanvas"),gameCanvas=document.getElementById("game");
  if(!preview||!gameCanvas)return;
+ // Normal visitors get the prerecorded video only: do not initialise the canvas,
+ // animation loop, autopilot, or game engine on the landing page.
+ if(!recordMode){preview.style.display="none";return;}
  const ctx=preview.getContext("2d",{alpha:false}),frame=preview.closest(".preview-frame");
  const scoreEl=document.getElementById("previewScore"),waveEl=document.getElementById("previewWave"),weaponEl=document.getElementById("previewWeapon"),hullEl=document.getElementById("previewHull"),energyEl=document.getElementById("previewEnergy"),threatEl=document.getElementById("previewThreat"),bossBar=frame&&frame.querySelector(".preview-boss-bar span");
  const bossTitle=frame&&frame.querySelector(".preview-boss"),caption=frame&&frame.querySelector(".preview-caption b"),phaseLabel=frame&&frame.querySelector(".preview-caption span");
@@ -3697,7 +3700,7 @@ try{
   }
 }catch(e){}
 loadVoidProfile();createStars();updateHUD();paintMeta();
-// The landing showcase starts itself in showcase-only mode on its first animation frame.
+// The landing page plays only the prerecorded gameplay video. The real game engine\n// is initialised here only when the recording workflow explicitly uses ?record=1.
 for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}
 
 </script>

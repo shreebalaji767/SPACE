@@ -1255,6 +1255,7 @@ function showScreen(id){
 function goToLanding(){
     window.stopVoidLandingShowcase?.();
     showScreen("landingScreen");
+    window.startVoidLandingShowcase?.();
 }
 document.querySelector(".landing-brand")?.addEventListener("click",goToLanding);
 document.querySelector(".landing-brand")?.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goToLanding();}});
@@ -3373,10 +3374,10 @@ function updateHUD(){
 
     document.getElementById("hud")
         .style.display =
-            running ? "block" : "none";
+            running && !landingShowcaseMode ? "block" : "none";
 
     if(gameControls){
-        gameControls.style.display = running && !paused && window.matchMedia("(pointer: fine) and (min-width: 701px)").matches ? "grid" : "none";
+        gameControls.style.display = running && !paused && !landingShowcaseMode && window.matchMedia("(pointer: fine) and (min-width: 701px)").matches ? "grid" : "none";
     }
 }
 
@@ -3443,7 +3444,7 @@ const runUpgradeDefs=[
 ["regen","NANITE REPAIR","Regenerate hull slowly over time."],
 ["drone","WINGMAN DRONE","Add a side cannon to each volley."]
 ];
-function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>gameRandom()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
+function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;if(landingShowcaseMode){const u=runUpgradeDefs[Math.floor(gameRandom()*runUpgradeDefs.length)];runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20);}if(u[0]==="shield")createBurst(player.x,player.y,22,4);return;}paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>gameRandom()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
 function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
 function renderVoidMissions(){document.getElementById("missionContent").innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p><p>PERMANENT SKILL RANKS: "+Object.values(shipSkills).reduce((n,s)=>n+Object.values(s).reduce((a,v)=>a+v,0),0)+"</p>";}
 const voidSkillDefs=[
@@ -3554,69 +3555,81 @@ window.addEventListener("error",(event)=>{
 
 
 
-/* LANDING PAGE ACTIONS + CINEMATIC TRAILER PREVIEW
-   This is a self-contained canvas animation: it never starts the game engine,
-   awards progression, opens level-up choices, or touches the player's save. */
+/* LANDING PAGE ACTIONS + AUTHENTIC GAMEPLAY PREVIEW
+   Mirrors the real game canvas into the landing-page frame. The same game
+   engine runs in isolated showcase mode, with autoplay controls and no saved
+   progression, so the landing preview shows actual enemies, weapons, bombs,
+   collisions, bosses and effects rather than separately invented animation. */
 document.getElementById("landingPlayButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();currentGameMode="survival";startGame(false);});
 document.getElementById("landingMenuButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("menuScreen");});
 document.getElementById("landingHowButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("howScreen");});
 document.getElementById("landingModesButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("modeScreen");});
 (function initLandingPreview(){
- const canvas=document.getElementById("previewCanvas");
- if(!canvas)return;
- const ctx=canvas.getContext("2d",{alpha:false}),frame=canvas.closest(".preview-frame");
+ const preview=document.getElementById("previewCanvas"),gameCanvas=document.getElementById("game");
+ if(!preview||!gameCanvas)return;
+ const ctx=preview.getContext("2d",{alpha:false}),frame=preview.closest(".preview-frame");
  const scoreEl=document.getElementById("previewScore"),bossBar=frame&&frame.querySelector(".preview-boss-bar span");
  const bossTitle=frame&&frame.querySelector(".preview-boss"),caption=frame&&frame.querySelector(".preview-caption b"),phaseLabel=frame&&frame.querySelector(".preview-caption span");
- let w=1,h=1,dpr=1,last=0,elapsed=0,stopped=false,stars=[],shots=[],particles=[],enemies=[],rings=[],shake=0,slow=0,score=2480;
- const TAU=Math.PI*2;
+ let w=1,h=1,dpr=1,last=0,autoplayTime=0,nextBomb=5,nextUltimate=9,active=false,restarting=false;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=Math.max(1,r.width);h=Math.max(1,r.height);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);stars=Array.from({length:Math.max(45,Math.round(w*h/2600))},()=>({x:Math.random()*w,y:Math.random()*h,z:.25+Math.random()*.9,r:.5+Math.random()*1.2}));}
- function burst(x,y,color,count=24,power=100){for(let i=0;i<count;i++){const a=Math.random()*TAU,v=power*(.2+Math.random()*.8);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.35+Math.random()*.8,max:.35+Math.random()*.8,r:1+Math.random()*2.8,color});}rings.push({x,y,r:2,life:.65,max:.65,color});}
- function spawnEnemy(boss=false){const side=Math.floor(Math.random()*4);const x=side===0?Math.random()*w:side===1?Math.random()*w:side===2?-20:w+20;const y=side===2?Math.random()*h:side===3?Math.random()*h:side===0?-20:h+20;enemies.push({x,y,vx:0,vy:0,boss,hp:boss?1:0,spin:Math.random()*TAU,size:boss?Math.min(w,h)*.105:7+Math.random()*7,fire:Math.random()*.5});}
- function ship(x,y,angle=0,scale=1){ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(scale,scale);ctx.shadowBlur=18;ctx.shadowColor="#76e7ff";ctx.fillStyle="#7feaff";ctx.beginPath();ctx.moveTo(19,0);ctx.lineTo(-11,-11);ctx.lineTo(-6,0);ctx.lineTo(-11,11);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#f2fbff";ctx.beginPath();ctx.moveTo(9,0);ctx.lineTo(-7,-4);ctx.lineTo(-3,0);ctx.lineTo(-7,4);ctx.closePath();ctx.fill();ctx.fillStyle="#a78bfa";ctx.beginPath();ctx.moveTo(-7,-5);ctx.lineTo(-17,-10-Math.random()*5);ctx.lineTo(-12,0);ctx.lineTo(-17,10+Math.random()*5);ctx.lineTo(-7,5);ctx.closePath();ctx.fill();ctx.restore();}
- function drawEnemy(e,t){ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.spin+t*(e.boss?.18:.5));ctx.shadowBlur=e.boss?28:12;ctx.shadowColor=e.boss?"#ff65d8":"#ff6b9b";ctx.strokeStyle=e.boss?"#ff8be5":"#ff7b9e";ctx.fillStyle=e.boss?"rgba(121,35,133,.7)":"rgba(132,37,67,.8)";ctx.lineWidth=e.boss?3:1.5;ctx.beginPath();const n=e.boss?8:5;for(let i=0;i<n;i++){const a=i*TAU/n,r=e.size*(i%2?.72:1);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle="#fff0fb";ctx.beginPath();ctx.arc(0,0,e.boss?e.size*.2:2,0,TAU);ctx.fill();if(e.boss){ctx.strokeStyle="rgba(255,144,231,.65)";ctx.beginPath();ctx.ellipse(0,0,e.size*1.42,e.size*.58,t*.3,0,TAU);ctx.stroke();}ctx.restore();}
- function draw(now){
-  const dt=Math.min(.04,(now-(last||now))/1000);last=now;
-  if(!document.getElementById("landingScreen").classList.contains("active")){requestAnimationFrame(draw);return;}
-  if(!stopped)elapsed+=dt;
-  const t=elapsed,scene=t%24,cinema=scene>15&&scene<19, bossScene=scene>10&&scene<19,scale=cinema?.28:1;
-  slow=Math.max(0,slow-dt);shake=Math.max(0,shake-dt*24);
-  const cx=w*.5+Math.sin(t*.62)*w*.07,cy=h*.56+Math.cos(t*.8)*h*.06;
-  ctx.save();if(shake>0)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
-  ctx.fillStyle="#050713";ctx.fillRect(0,0,w,h);
-  const bg=ctx.createRadialGradient(w*.5,h*.48,0,w*.5,h*.48,Math.max(w,h)*.72);bg.addColorStop(0,"#19224b");bg.addColorStop(.52,"#0a1028");bg.addColorStop(1,"#040610");ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle="rgba(104,132,219,.09)";ctx.lineWidth=1;const grid=34,off=(t*14)%grid;for(let x=-grid;x<w+grid;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}for(let y=-grid+off;y<h+grid;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
-  for(const s of stars){s.y+=s.z*(22+scene*1.5)*dt;if(s.y>h){s.y=0;s.x=Math.random()*w;}ctx.globalAlpha=.25+s.z*.7;ctx.fillStyle=s.z>.8?"#c8f5ff":"#7d9dff";ctx.fillRect(s.x,s.y,s.r,s.r);}ctx.globalAlpha=1;
-  // Timed trailer scenes: multi-shot weapons, enemy swarm, bomb detonation, boss phases and upgrade/reward callouts.
-  const spawnRate=scene<4?.42:scene<10?.25:bossScene?.7:.32;
-  if(!stopped&&Math.random()<dt/spawnRate&&enemies.length<(bossScene?7:13))spawnEnemy(bossScene&&scene>11&&Math.random()<.18);
-  if(bossScene&&!enemies.some(e=>e.boss)&&scene>10)spawnEnemy(true);
-  for(const e of enemies){const dx=cx-e.x,dy=cy-e.y,d=Math.hypot(dx,dy)||1;const speed=(e.boss?19:42)*scale;e.vx+=(dx/d*speed-e.vx)*Math.min(1,dt*1.2);e.vy+=(dy/d*speed-e.vy)*Math.min(1,dt*1.2);e.x+=e.vx*dt;e.y+=e.vy*dt;e.fire-=dt;e.spin+=dt*(e.boss?.2:.8);drawEnemy(e,t);}
-  if(!stopped&&t%(.18)>dt&&Math.random()<dt*7){const a=t*1.8;for(let k=0;k<(scene>5&&scene<10?3:1);k++){const ang=a+(k-1)*.19;shots.push({x:cx+Math.cos(ang)*18,y:cy+Math.sin(ang)*18,vx:Math.cos(ang)*410,vy:Math.sin(ang)*410,life:.85,color:scene>5&&scene<10?"#ff8ce8":"#83f5ff"});}}
-  for(let i=shots.length-1;i>=0;i--){const b=shots[i];b.x+=b.vx*dt*scale;b.y+=b.vy*dt*scale;b.life-=dt;if(b.life<=0||b.x<0||b.x>w||b.y<0||b.y>h){shots.splice(i,1);continue;}ctx.save();ctx.strokeStyle=b.color;ctx.shadowBlur=12;ctx.shadowColor=b.color;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(b.x-b.vx*.035,b.y-b.vy*.035);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();for(let j=enemies.length-1;j>=0;j--){const e=enemies[j];if(Math.hypot(e.x-b.x,e.y-b.y)<e.size+4){if(!e.boss||Math.random()<.25){burst(e.x,e.y,e.boss?"#ff87e7":"#ffc1d7",e.boss?12:9,e.boss?65:45);if(!e.boss)enemies.splice(j,1);else e.size*=.985;score+=e.boss?120:35;}shots.splice(i,1);break;}}}
-  if(!stopped&&scene>7&&scene<9&&Math.abs(scene-8)<dt*1.5){burst(cx,cy,"#9eeaff",70,230);shake=13;slow=1.5;}
-  if(!stopped&&scene>15&&scene<15.1){burst(w*.72,h*.38,"#ff87e7",110,280);shake=20;slow=2;}
-  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt*scale;p.y+=p.vy*dt*scale;p.vx*=Math.pow(.08,dt);p.vy*=Math.pow(.08,dt);p.life-=dt;if(p.life<=0){particles.splice(i,1);continue;}ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.shadowBlur=8;ctx.shadowColor=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.fill();}ctx.globalAlpha=1;ctx.shadowBlur=0;
-  for(let i=rings.length-1;i>=0;i--){const r=rings[i];r.life-=dt;r.r+=dt*180;if(r.life<=0){rings.splice(i,1);continue;}ctx.globalAlpha=clamp(r.life/r.max,0,1);ctx.strokeStyle=r.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,TAU);ctx.stroke();}ctx.globalAlpha=1;
-  // Energy aura and exhaust trails make the ship read clearly at all preview sizes.
-  for(let k=3;k>0;k--){ctx.globalAlpha=.045*k;ctx.fillStyle="#74dfff";ctx.beginPath();ctx.ellipse(cx-13-k*4,cy,5+k*2,3+k,0,0,TAU);ctx.fill();}ctx.globalAlpha=1;ship(cx,cy,Math.sin(t*1.2)*.18,Math.min(1.15,w/380));
-  // Trailer overlays describe features; these are graphics, not interactive game UI.
-  if(scene>3&&scene<7){ctx.fillStyle="rgba(5,8,23,.76)";ctx.fillRect(w*.05,h*.16,w*.48,31);ctx.fillStyle="#8ff5ff";ctx.font="bold 10px ui-monospace,monospace";ctx.fillText("ARSENAL SHOWCASE  //  MULTI-SHOT",w*.08,h*.16+20);}
-  if(scene>7&&scene<10){ctx.fillStyle="rgba(5,8,23,.78)";ctx.fillRect(w*.05,h*.16,w*.44,31);ctx.fillStyle="#ffce8c";ctx.font="bold 10px ui-monospace,monospace";ctx.fillText("NOVA BOMB  //  SLOW-MOTION BLAST",w*.08,h*.16+20);}
-  if(bossScene){ctx.strokeStyle="rgba(255,128,230,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.arc(w*.73,h*.4,Math.min(w,h)*(.19+Math.sin(t*2)*.015),0,TAU);ctx.stroke();}
-  if(scene>18&&scene<23){ctx.fillStyle="rgba(5,8,23,.82)";ctx.fillRect(w*.12,h*.2,w*.76,54);ctx.textAlign="center";ctx.fillStyle="#a4f5d6";ctx.font="bold 11px ui-monospace,monospace";ctx.fillText(scene<20.8?"UPGRADE ACQUIRED  //  OVERCHARGED CORE":"SECTOR CLEARED  //  REWARDS SECURED",w*.5,h*.2+22);ctx.fillStyle="#c4ccef";ctx.font="10px ui-monospace,monospace";ctx.fillText(scene<20.8?"DAMAGE +12  •  FIRE RATE BOOST":"CREDITS  +250  •  PILOT XP  +100",w*.5,h*.2+41);ctx.textAlign="left";}
-  if(scoreEl)scoreEl.textContent=String(Math.floor(score)).padStart(5,"0");
-  if(bossBar)bossBar.style.width=(bossScene?clamp(70-Math.sin(t*1.3)*18-(scene>15?25:0),18,90):clamp(62+Math.sin(t*1.5)*12,40,80))+"%";
-  if(bossTitle)bossTitle.firstChild.textContent=bossScene?(scene>15?"PHASE 03 // CORE EXPOSED":"NOVA COLOSSUS // BOSS FIGHT"):"SECTOR 07 // HOSTILE CONTACTS";
-  if(caption)caption.textContent=scene<4?"PULSE CANNONS — HOSTILE SWARM":scene<7?"ARSENAL EVOLUTION — MULTI-SHOT":scene<10?"NOVA BOMB — CINEMATIC DETONATION":scene<15?"BOSS ENCOUNTER — PHASE SHIFT":scene<19?"SLOW MOTION — CORE EXPOSED":scene<22?"UPGRADE PICKUP — POWER SPIKE":"SECTOR CLEARED — REWARDS EARNED";
-  if(phaseLabel)phaseLabel.textContent=scene<4?"AUTO-FIRE / WAVE 03":scene<7?"WEAPON EVOLUTION":scene<10?"BOMB DETONATION":scene<15?"BOSS PHASE 02 / 03":scene<19?"CINEMATIC SLOW-MO":scene<22?"UPGRADE + REWARDS":"VICTORY";
-  ctx.restore();requestAnimationFrame(draw);
+ function resize(){const r=preview.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=Math.max(1,r.width);h=Math.max(1,r.height);preview.width=Math.round(w*dpr);preview.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+ function start(){
+   if(active||!document.getElementById("landingScreen").classList.contains("active"))return;
+   active=true;restarting=false;autoplayTime=0;nextBomb=4;nextUltimate=8;
+   currentGameMode="survival";
+   startGame(true);
+   showScreen("landingScreen");
+   const hud=document.getElementById("hud");if(hud)hud.style.display="none";
+   if(gameControls)gameControls.style.display="none";
  }
- window.stopVoidLandingShowcase=()=>{last=0;}; // The trailer pauses itself off-screen and resumes when landing returns.
+ function stop(){
+   active=false;restarting=false;
+   if(landingShowcaseMode){running=false;paused=false;landingShowcaseMode=false;}
+   const hud=document.getElementById("hud");if(hud)hud.style.display="none";
+   if(gameControls)gameControls.style.display="none";
+ }
+ window.startVoidLandingShowcase=start;
+ window.stopVoidLandingShowcase=stop;
+ function autoplay(dt){
+   if(!running||paused||!landingShowcaseMode)return;
+   autoplayTime+=dt;
+   // Pilot aims at a real enemy and fires using the game's own weapon system.
+   let target=null,best=Infinity;
+   for(const e of enemies){const d=Math.hypot(e.x-player.x,e.y-player.y);if(d<best){best=d;target=e;}}
+   if(target){
+     player.angle=Math.atan2(target.y-player.y,target.x-player.x);
+     if(best>Math.min(W,H)*.23){keys.KeyW=true;keys.KeyS=false;}else{keys.KeyW=false;keys.KeyS=true;}
+   }else{
+     player.angle+=dt*.8;keys.KeyW=true;keys.KeyS=false;
+   }
+   keys.KeyA=keys.KeyD=false;
+   shoot();
+   if(autoplayTime>=nextBomb){useBomb();nextBomb=autoplayTime+10;}
+   if(autoplayTime>=nextUltimate){useShipUltimate();nextUltimate=autoplayTime+18;}
+ }
+ function draw(now){
+   const dt=Math.min(.05,(now-(last||now))/1000);last=now;
+   if(document.getElementById("landingScreen").classList.contains("active")){
+     if(!active)start();
+     if(active&&landingShowcaseMode&&running){
+       autoplay(dt);
+       try{ctx.drawImage(gameCanvas,0,0,gameCanvas.width,gameCanvas.height,0,0,w,h);}catch(e){}
+       if(scoreEl)scoreEl.textContent=String(Math.floor(score)).padStart(5,"0");
+       if(bossBar){const boss=enemies.find(e=>e.boss);bossBar.style.width=(boss?clamp(boss.health/(boss.maxHealth||boss.health)*100,8,100):0)+"%";}
+       if(bossTitle){const boss=enemies.find(e=>e.boss);bossTitle.textContent=boss?"LIVE BOSS ENCOUNTER":"LIVE SURVIVAL RUN";}
+       if(caption)caption.textContent= enemies.some(e=>e.boss)?"ACTUAL BOSS FIGHT — LIVE GAME ENGINE":runUpgrades.critical?"ACTUAL COMBAT — MULTI-SHOT UPGRADE":"ACTUAL GAMEPLAY — ENEMIES, WEAPONS & COLLISIONS";
+       if(phaseLabel)phaseLabel.textContent="LIVE PREVIEW • NO SAVE OR REWARDS";
+     }else if(active&&!restarting){
+       // If the showcase pilot is destroyed, reset a fresh authentic run.
+       restarting=true;active=false;running=false;paused=false;landingShowcaseMode=false;
+       requestAnimationFrame(()=>{if(document.getElementById("landingScreen").classList.contains("active"))start();});
+     }
+   }
+   requestAnimationFrame(draw);
+ }
  window.addEventListener("resize",resize,{passive:true});
  resize();requestAnimationFrame(draw);
-})();
-/* =========================================================
+})();/* =========================================================
    INITIAL STATE
 ========================================================= */
 
@@ -3681,7 +3694,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v9";
+const CACHE = "void-space-v10";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

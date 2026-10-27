@@ -3632,7 +3632,9 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
    // visibly includes a real boss encounter, not just empty-space flying.
    currentGameMode="bossrush";
    startGame(true);
-   // Seed a small supporting wave around the real boss for immediate combat.
+   const showcaseBoss=enemies.find(e=>e.boss);if(showcaseBoss)showcaseBoss.y=H*.18;
+   // Seed a small supporting wave inside the camera so the recording shows
+   // the boss and regular hostiles together from the opening seconds.
    for(let i=0;i<6;i++){spawnEnemy();const e=enemies[enemies.length-1];e.x=W*(.18+(i%3)*.32);e.y=H*(i<3?.22:.78);e.vx=0;e.vy=0;}
    showScreen("landingScreen");
    const hud=document.getElementById("hud");if(hud)hud.style.display="none";

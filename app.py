@@ -793,6 +793,7 @@ body::before{
         <div class="hud-box">
             <div>SCORE <b id="score">0</b></div>
             <div>WAVE <b id="wave">1</b></div>
+            <div>BUILD <b id="evolutionLabel">STANDARD</b></div>
             <div>KILLS <b id="kills">0</b></div>
         </div>
 
@@ -3204,6 +3205,9 @@ function updateHUD(){
 
     document.getElementById("kills")
         .textContent = kills;
+
+    const evolutionLabel=document.getElementById("evolutionLabel");
+    if(evolutionLabel)evolutionLabel.textContent=voidWeaponEvolution()||"STANDARD";
 
     document.getElementById("healthBar")
         .style.width =

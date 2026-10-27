@@ -1378,6 +1378,10 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
             NEXT LEVEL →
         </button>
 
+        <button class="primary" id="replayLevelButton" style="display:none">
+            ↻ REPLAY LEVEL
+        </button>
+
         <button id="restartButton">
             PLAY AGAIN
         </button>
@@ -1790,6 +1794,8 @@ function endGame(victory=false){
     document.querySelector("#gameOverScreen h1").textContent=victory?"SECTOR CLEARED":"GAME OVER";
     const nextLevelButton=document.getElementById("nextLevelButton");
     if(nextLevelButton)nextLevelButton.style.display=victory&&currentGameMode==="campaign"?"inline-block":"none";
+    const replayLevelButton=document.getElementById("replayLevelButton");
+    if(replayLevelButton)replayLevelButton.style.display=!victory?"inline-block":"none";
     if(victory){campaignWins++;campaignProgress[currentRoute]=(campaignProgress[currentRoute]||0)+1;awardVoidCoins(500+wave*25);awardVoidXP(300);createBurst(player.x,player.y,150,12,"#ffe9a6");screenFlash=.9;}
     modeRecords[currentGameMode]=Math.max(modeRecords[currentGameMode]||0,score);
     checkVoidAchievements();
@@ -1818,6 +1824,17 @@ document.getElementById("startButton")
 
 document.getElementById("restartButton")
     .addEventListener("click",startGame);
+
+document.getElementById("replayLevelButton").addEventListener("click",()=>{
+    if(runEndedByVictory)return;
+    const levelToReplay=Math.max(1,wave);
+    startGame();
+    wave=levelToReplay;
+    waveTimer=0;
+    enemySpawnTimer=0;
+    if(currentGameMode==="bossrush"||wave%5===0)spawnBoss();
+    updateHUD();
+});
 
 document.getElementById("nextLevelButton").addEventListener("click",()=>{
     if(currentGameMode!=="campaign"||!runEndedByVictory)return;

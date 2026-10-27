@@ -1374,19 +1374,32 @@ let audioContext = null;
 
 function initAudio(){
 
+    // Browsers only allow Web Audio to start from a real user gesture.
+    // Never create/resume the context during the automatic landing preview.
     if(!audioContext){
-        try{
-            audioContext =
-                new (window.AudioContext ||
-                     window.webkitAudioContext)();
-        }catch(e){}
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if(!AudioContextClass) return;
+        try{ audioContext = new AudioContextClass(); }catch(e){ return; }
     }
 
-    if(audioContext &&
-       audioContext.state === "suspended"){
-        audioContext.resume().catch(()=>{});
+    if(audioContext.state === "suspended"){
+        try{
+            const resumeResult = audioContext.resume();
+            if(resumeResult && typeof resumeResult.catch === "function"){
+                resumeResult.catch(()=>{});
+            }
+        }catch(e){}
     }
 }
+
+// A real pointer or keyboard gesture unlocks audio for browsers that require it.
+// This handler runs only after a user interaction, never from animation frames.
+function unlockAudioFromGesture(){
+    if(window.voidSoundEnabled === false) return;
+    initAudio();
+}
+window.addEventListener("pointerdown",unlockAudioFromGesture,{passive:true});
+window.addEventListener("keydown",unlockAudioFromGesture);
 
 function sound(freq,duration,type="sine",volume=.035){
 
@@ -1487,7 +1500,9 @@ function resetGame(){
 function startGame(isShowcase=false){
 
     landingShowcaseMode=!!isShowcase;
-    initAudio();
+    // The landing preview is autoplayed, so it must not initialize Web Audio.
+    // Real gameplay starts from the Play button, which is a valid user gesture.
+    if(!isShowcase) initAudio();
 
     if(gameOverTimer){
         clearTimeout(gameOverTimer);
@@ -1502,8 +1517,10 @@ function startGame(isShowcase=false){
 
     hideScreens();
 
-    sound(440,.08,"square",.025);
-    sound(660,.12,"square",.018);
+    if(!isShowcase){
+        sound(440,.08,"square",.025);
+        sound(660,.12,"square",.018);
+    }
 }
 
 function togglePause(){
@@ -1605,8 +1622,12 @@ document.getElementById("skillTreeButton").addEventListener("click",()=>{renderV
 document.getElementById("skillTreeBackButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));
 document.getElementById("missionBackButton").addEventListener("click",()=>showScreen("menuScreen"));
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;document.getElementById("installButton").hidden=false});
-document.getElementById("installButton").addEventListener("click",async()=>{if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;document.getElementById("installButton").hidden=true}});
+// Let the browser show its native PWA install prompt. Deferring
+// beforeinstallprompt without promptly calling prompt() causes a console warning.
+window.addEventListener("beforeinstallprompt",()=> {
+    const installButton=document.getElementById("installButton");
+    if(installButton) installButton.hidden=true;
+});
 try{if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("/sw.js").catch(()=>{})}catch(e){}
 
 document.getElementById("howBackButton")
@@ -3701,7 +3722,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v11";
+const CACHE = "void-space-v12";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

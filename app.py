@@ -618,10 +618,11 @@ button:focus-visible{
 
         <div class="setting-row">
             <span>TOUCH CONTROLS</span>
-            <span class="setting-value">
-                AUTO
-            </span>
+            <span class="setting-value">AUTO</span>
         </div>
+        <div class="setting-row"><span>SOUND EFFECTS</span><button id="soundToggle">ON</button></div>
+        <div class="setting-row"><span>SCREEN SHAKE</span><button id="shakeToggle">ON</button></div>
+        <div class="setting-row"><span>VISUAL FX</span><button id="fxToggle">FULL</button></div>
 
         <div class="setting-row">
             <span>MOUSE AIM</span>
@@ -1102,6 +1103,9 @@ document.getElementById("howButton")
     });
 
 document.getElementById("settingsButton").addEventListener("click",()=>showScreen("settingsScreen"));
+document.getElementById("soundToggle")?.addEventListener("click",e=>{window.voidSoundEnabled=!(window.voidSoundEnabled!==false);e.currentTarget.textContent=window.voidSoundEnabled?"ON":"OFF";});
+document.getElementById("shakeToggle")?.addEventListener("click",e=>{window.voidShakeEnabled=!(window.voidShakeEnabled!==false);e.currentTarget.textContent=window.voidShakeEnabled?"ON":"OFF";});
+document.getElementById("fxToggle")?.addEventListener("click",e=>{window.voidFxEnabled=!(window.voidFxEnabled!==false);e.currentTarget.textContent=window.voidFxEnabled?"FULL":"LITE";});
 document.getElementById("hangarButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("missionsButton").addEventListener("click",()=>{renderVoidMissions();showScreen("missionScreen")});
 document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));
@@ -1394,25 +1398,20 @@ function shoot(){
 
     const speed = 720;
 
-    bullets.push({
-
-        x:player.x +
-           Math.cos(player.angle)*20,
-
-        y:player.y +
-           Math.sin(player.angle)*20,
-
-        vx:Math.cos(player.angle)*speed +
-           player.vx*.2,
-
-        vy:Math.sin(player.angle)*speed +
-           player.vy*.2,
-
-        life:1.1,
-
-        radius:3
-
-    });
+    const shotCount=runUpgrades.critical>=4?3:(runUpgrades.critical>=2?2:1);
+    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(Math.random()<Math.min(.35,runUpgrades.critical*.05)?2:1);
+    for(let i=0;i<shotCount;i++){
+        const angle=player.angle+(i-(shotCount-1)/2)*.12;
+        bullets.push({
+            damage:shotDamage,
+            x:player.x+Math.cos(angle)*20,
+            y:player.y+Math.sin(angle)*20,
+            vx:Math.cos(angle)*speed+player.vx*.2,
+            vy:Math.sin(angle)*speed+player.vy*.2,
+            life:1.1,
+            radius:3
+        });
+    }
 
     createBurst(
         player.x + Math.cos(player.angle)*22,
@@ -1441,7 +1440,7 @@ function useBomb(){
 
     player.bombCooldown = 8;
 
-    const radius=Math.min(Math.max(W,H)*.62,520);bombFx={x:player.x,y:player.y,r:12,max:radius,life:.95};const flash=document.getElementById("bombFlash");flash.style.transition="none";flash.style.opacity=".95";requestAnimationFrame(()=>{flash.style.transition="opacity .9s ease-out";flash.style.opacity="0"});
+    const radius=Math.min(Math.max(W,H)*.62,520);bombSlow=1.15;bombFx={x:player.x,y:player.y,r:12,max:radius,life:.95};const flash=document.getElementById("bombFlash");flash.style.transition="none";flash.style.opacity=".95";requestAnimationFrame(()=>{flash.style.transition="opacity .9s ease-out";flash.style.opacity="0"});
 
     for(const enemy of enemies){
 
@@ -2214,7 +2213,7 @@ function bulletCollisions(){
                 enemy.radius+bullet.radius
             ){
 
-                enemy.health-=(bullet.damage||30)*(player.shipDamage||1)*(1+runUpgrades.damage*.4);
+                enemy.health-=bullet.damage||(enemy.boss?16:30);
 
                 createBurst(
                     bullet.x,
@@ -2388,7 +2387,8 @@ function update(dt){
 
     if(!running || paused) return;
 
-    dt = Math.min(dt,.033);
+    dt=Math.min(dt,.033);
+    if(bombSlow>0){bombSlow=Math.max(0,bombSlow-dt);dt*=.22;}
 
     updateStars(dt);
     updatePlayer(dt);
@@ -2914,7 +2914,7 @@ requestAnimationFrame(gameLoop);
 
 /* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
-let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0},installPrompt=null,bombFx=null;
+let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
 function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=p.ship||"striker";ownedShips=p.owned||["striker"];bestScore=p.best||0;bestWave=p.wave||1;}catch(e){}}
 function saveVoidProfile(){try{localStorage.setItem("voidSpaceProfile",JSON.stringify({coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,best:bestScore,wave:bestWave}));}catch(e){}}

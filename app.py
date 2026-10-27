@@ -3621,8 +3621,12 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
    // Normal visitors always watch the prerecorded video and never get auto-piloted.
    if(!recordMode||active||!document.getElementById("landingScreen").classList.contains("active"))return;
    active=true;restarting=false;autoplayTime=0;nextBomb=4;nextUltimate=8;for(const k of Object.keys(keys))keys[k]=false;
-   currentGameMode="survival";
+   // The recording-only showcase begins in Boss Rush so the saved trailer
+   // visibly includes a real boss encounter, not just empty-space flying.
+   currentGameMode="bossrush";
    startGame(true);
+   // Seed a small supporting wave around the real boss for immediate combat.
+   for(let i=0;i<6;i++)spawnEnemy();
    showScreen("landingScreen");
    const hud=document.getElementById("hud");if(hud)hud.style.display="none";
    if(gameControls)gameControls.style.display="none";

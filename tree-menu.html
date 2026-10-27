@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101526">
+<meta name="description" content="An accessible, responsive design-system tree menu built with plain HTML, CSS and JavaScript.">
+<title>Design System · Tree Menu</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1120;--panel:rgba(24,32,53,.82);--line:rgba(180,198,235,.14);--text:#edf1ff;--muted:#a5b1cb;--accent:#a9b8ff;--mint:#9be6d1;--focus:#d8e1ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 0%,#283455 0,transparent 42%),radial-gradient(ellipse at 100% 20%,#183c49 0,transparent 36%),var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{width:min(920px,100% - 32px);margin:clamp(24px,7vh,72px) auto}.eyebrow{color:var(--mint);font-size:.75rem;font-weight:750;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(2rem,5vw,3.25rem);letter-spacing:-.045em;line-height:1.08;margin:.45rem 0 .8rem}.intro{max-width:650px;color:var(--muted);margin:0 0 24px}.shell{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(18px);border-radius:22px;box-shadow:0 24px 70px #0003;overflow:hidden}.toolbar{display:flex;gap:10px;align-items:center;padding:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.search{flex:1;min-width:180px;background:#0b1020;border:1px solid var(--line);border-radius:11px;padding:11px 13px;color:var(--text);font:inherit;outline:none}.search:focus-visible,button:focus-visible,.node:focus-visible{outline:2px solid var(--focus);outline-offset:3px}.toolbtn{border:1px solid var(--line);background:#ffffff08;color:var(--text);padding:10px 12px;border-radius:10px;font:inherit;cursor:pointer}.toolbtn:hover{background:#ffffff12}.tree{padding:16px 16px 20px}.tree ul{list-style:none;margin:0;padding:0 0 0 25px;position:relative}.tree>ul{padding-left:0}.tree ul ul{border-left:1px solid var(--line);margin-left:9px}.tree li{position:relative;margin:3px 0}.tree ul ul>li:before{content:"";position:absolute;left:-16px;top:19px;width:15px;border-top:1px solid var(--line)}.node{width:100%;display:flex;align-items:center;gap:10px;text-align:left;border:1px solid transparent;background:transparent;color:var(--text);padding:8px 10px;border-radius:10px;cursor:pointer;font:inherit;min-height:40px}.node:hover{background:#ffffff08}.node.selected{background:#a9b8ff17;border-color:#a9b8ff48}.caret{width:16px;height:16px;display:grid;place-items:center;color:var(--muted);flex:none;transition:transform .18s}.node[aria-expanded="true"] .caret{transform:rotate(90deg)}.leaf .caret{visibility:hidden}.dot{width:7px;height:7px;border-radius:3px;background:var(--mint);opacity:.75;flex:none}.label{flex:1}.count{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:1px 6px}.details{border-top:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}.details strong{color:var(--text);font-weight:650}.empty{color:var(--muted);padding:24px 10px;text-align:center}.hidden{display:none!important}.hint{font-size:.82rem;color:var(--muted);margin:14px 3px 0}
+@media(max-width:560px){main{width:calc(100% - 20px);margin:24px auto}.tree{padding:12px 10px 16px}.tree ul{padding-left:18px}.tree ul ul{margin-left:6px}.tree ul ul>li:before{left:-12px;width:11px}.node{padding:8px 7px;gap:8px}.toolbar{padding:12px}.details{padding:12px 14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Interface library</div>
+  <h1>Design system tree</h1>
+  <p class="intro">Explore foundations, reusable components and interaction patterns. Expand any branch or search for a topic. Runs entirely in your browser—no React, build step, ads or external dependencies.</p>
+  <section class="shell" aria-label="Design system navigation">
+    <div class="toolbar">
+      <input id="search" class="search" type="search" placeholder="Search the menu…" aria-label="Search menu items" autocomplete="off">
+      <button class="toolbtn" id="expand" type="button">Expand all</button>
+      <button class="toolbtn" id="collapse" type="button">Collapse all</button>
+    </div>
+    <nav class="tree" id="tree" aria-label="Design system topics"></nav>
+    <div class="details" aria-live="polite"><span>Selected: <strong id="selected">Nothing yet</strong></span><span id="summary">3 sections · 27 topics</span></div>
+  </section>
+  <p class="hint">Tip: use Tab to move between items, Enter or Space to expand a branch, and the search field to filter topics.</p>
+</main>
+<script>
+const menuData=[
+{id:"foundation",label:"Foundation",children:[
+{id:"design-principles",label:"Design Principles",children:[{id:"clarity",label:"Clarity"},{id:"efficiency",label:"Efficiency"},{id:"consistency",label:"Consistency"},{id:"beauty",label:"Beauty"}]},
+{id:"colors",label:"Colors",children:[{id:"neutrals",label:"Neutrals",children:[{id:"neutral-50",label:"Slate 50"},{id:"neutral-500",label:"Slate 500"},{id:"neutral-900",label:"Slate 900"}]},{id:"brand-colors",label:"Brand Colors"},{id:"functional-colors",label:"Functional Colors"}]},
+{id:"typography",label:"Typography",children:[{id:"font-family",label:"Font Family"},{id:"font-size",label:"Font Size"},{id:"font-weight",label:"Font Weight"}]},
+{id:"icons",label:"Icons",children:[{id:"icon-family",label:"Icon Family"},{id:"icon-size",label:"Icon Size"},{id:"icon-weight",label:"Icon Weight"}]}]},
+{id:"components",label:"Components",children:[{id:"buttons",label:"Buttons",children:[{id:"primary-button",label:"Primary Button"},{id:"secondary-button",label:"Secondary Button"}]},{id:"cards",label:"Cards",children:[{id:"profile-card",label:"Profile Card"},{id:"product-card",label:"Product Card"}]}]},
+{id:"gestures",label:"Gestures",children:[{id:"tap",label:"Tap"},{id:"swipe",label:"Swipe",children:[{id:"swipe-left",label:"Swipe Left"},{id:"swipe-right",label:"Swipe Right"}]}]}
+];
+const tree=document.getElementById("tree"),search=document.getElementById("search"),selected=document.getElementById("selected"),summary=document.getElementById("summary");
+let selectedId=null,query="";
+function countNodes(nodes){return nodes.reduce((n,item)=>n+1+(item.children?countNodes(item.children):0),0)}
+function build(nodes,parent,depth=0){
+ const ul=document.createElement("ul");
+ nodes.forEach(item=>{
+  const li=document.createElement("li");li.dataset.id=item.id;li.dataset.label=item.label.toLowerCase();
+  const hasChildren=!!(item.children&&item.children.length);
+  const btn=document.createElement("button");btn.type="button";btn.className="node"+(hasChildren?"":" leaf");btn.dataset.id=item.id;btn.setAttribute("aria-expanded",hasChildren?"true":"false");
+  const caret=document.createElement("span");caret.className="caret";caret.setAttribute("aria-hidden","true");caret.textContent="›";
+  const dot=document.createElement("span");dot.className="dot";dot.setAttribute("aria-hidden","true");
+  const label=document.createElement("span");label.className="label";label.textContent=item.label;
+  btn.append(caret,dot,label);
+  if(hasChildren){const count=document.createElement("span");count.className="count";count.textContent=countNodes(item.children);count.setAttribute("aria-label",count.textContent+" nested topics");btn.append(count)}
+  btn.addEventListener("click",()=>{selectedId=item.id;selected.textContent=item.label;tree.querySelectorAll(".node").forEach(n=>n.classList.toggle("selected",n.dataset.id===selectedId));if(hasChildren){const open=btn.getAttribute("aria-expanded")==="true";btn.setAttribute("aria-expanded",String(!open));const child=li.querySelector(":scope > ul");if(child)child.classList.toggle("hidden",open)}});
+  li.append(btn);
+  if(hasChildren)li.append(build(item.children,li,depth+1));
+  ul.append(li);
+ });return ul
+}
+function applySearch(){
+ query=search.value.trim().toLowerCase();
+ tree.querySelectorAll("li").forEach(li=>{
+  const own=li.dataset.label.includes(query);
+  const descendants=[...li.querySelectorAll(":scope ul li")];
+  const childMatch=descendants.some(child=>child.dataset.label.includes(query));
+  const show=!query||own||childMatch;
+  li.classList.toggle("hidden",!show);
+  const child=li.querySelector(":scope > ul"),btn=li.querySelector(":scope > .node");
+  if(child&&query&&show){child.classList.remove("hidden");btn.setAttribute("aria-expanded","true")}
+  if(child&&!query){const isOpen=btn.getAttribute("aria-expanded")==="true";child.classList.toggle("hidden",!isOpen)}
+ });
+ const visible=[...tree.querySelectorAll("li")].filter(li=>!li.classList.contains("hidden")).length;
+ summary.textContent=query?visible+" matching topics":countNodes(menuData)+" topics · "+menuData.length+" sections";
+}
+tree.append(build(menuData,tree));search.addEventListener("input",applySearch);
+document.getElementById("expand").addEventListener("click",()=>{tree.querySelectorAll(":scope > ul ul").forEach(ul=>ul.classList.remove("hidden"));tree.querySelectorAll(".node[aria-expanded]").forEach(btn=>btn.setAttribute("aria-expanded","true"))});
+document.getElementById("collapse").addEventListener("click",()=>{tree.querySelectorAll("li > ul").forEach(ul=>ul.classList.add("hidden"));tree.querySelectorAll(".node[aria-expanded]").forEach(btn=>btn.setAttribute("aria-expanded","false"))});
+</script>
+</body>
+</html>

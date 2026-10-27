@@ -2990,6 +2990,12 @@ def pwa_manifest():
     )
 
 
+@app.route("/favicon.ico")
+def favicon():
+    # Serve the same lightweight SVG icon for browsers requesting /favicon.ico.
+    return pwa_icon()
+
+
 @app.route("/icon.svg")
 def pwa_icon():
     return app.response_class(

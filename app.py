@@ -819,7 +819,7 @@ body::before{
 .preview-lights{display:flex;gap:5px}.preview-lights i{width:6px;height:6px;border-radius:50%;background:#69769e}.preview-lights i:first-child{background:#b5a7ff}
 .preview-live{display:flex;align-items:center;gap:6px;color:#9ce8d2}.preview-live:before{content:"";width:5px;height:5px;background:#9ce8d2;border-radius:50%;box-shadow:0 0 9px #9ce8d2}
 .preview-stage{position:relative;aspect-ratio:1.28;min-height:230px;max-height:430px;background:radial-gradient(ellipse at 50% 52%,#17204a,#080c1d 65%,#050713);}
-#previewCanvas{display:block;width:100%;height:100%;position:absolute;inset:0;}#previewVideo{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:cover;background:#030712;}body.gameplay-record-mode #previewVideo{display:none;}
+#previewCanvas{display:none;width:100%;height:100%;position:absolute;inset:0;}#previewVideo{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:cover;background:#030712;}body.gameplay-record-mode #previewVideo{display:none;}body.gameplay-record-mode #previewCanvas{display:block;}body.gameplay-record-mode .landing-screen,body.gameplay-record-mode .screen{display:none!important;}body.gameplay-record-mode #game{z-index:1;}body.gameplay-record-mode #hud{display:none!important;}
 .preview-hud{position:absolute;inset:13px;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start;font:9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;color:#dce5ff;text-shadow:0 1px 5px #050713;}
 .preview-chip{padding:8px 9px;border:1px solid rgba(173,190,255,.18);border-radius:8px;background:rgba(7,11,27,.72);line-height:1.9;}
 .preview-chip b{color:#a9dcf8;}
@@ -827,7 +827,7 @@ body::before{
 .preview-boss-bar{height:5px;margin-top:6px;background:rgba(255,255,255,.1);border-radius:9px;overflow:hidden;}
 .preview-boss-bar span{display:block;width:68%;height:100%;background:linear-gradient(90deg,#9b8eff,#f0a6e5);box-shadow:0 0 12px #b5a7ff;}
 .preview-caption{padding:12px 15px;display:flex;justify-content:space-between;gap:12px;align-items:center;background:rgba(12,17,38,.96);border-top:1px solid rgba(173,190,255,.12);font-size:10px;color:#aab7d7;}
-.preview-caption b{color:#e9eaff;letter-spacing:.06em;}
+.preview-caption b{color:#e9eaff;letter-spacing:.06em;}.preview-video-controls{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none;font:800 9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;color:#e9eaff;text-shadow:0 1px 6px #000}.preview-video-controls div{display:flex;gap:6px;pointer-events:auto}.preview-video-controls button{margin:0;min-height:30px;padding:6px 9px;font-size:9px;letter-spacing:.05em;background:rgba(7,11,27,.88);border-color:rgba(173,190,255,.28)}.preview-video-controls button:focus-visible{outline:2px solid #b8f0ff;outline-offset:2px}body.gameplay-record-mode .preview-video-controls{display:none;}
 .landing-section-head{text-align:center;margin-bottom:20px;}
 .landing-section-head small{color:#b8b0ff;letter-spacing:.22em;font-size:9px;font-weight:800;}
 .landing-section-head h2{margin-top:10px;font-size:clamp(23px,3vw,32px);letter-spacing:-.03em;color:#eff1ff;}
@@ -910,13 +910,12 @@ body::before{
           <div class="landing-trust"><span>✦ <b>7 GAME MODES</b></span><span>◈ <b>4 SHIPS</b></span><span>⬡ <b>LOCAL SAVES</b></span></div>
         </div>
         <div class="preview-frame" aria-label="Animated gameplay preview">
-          <div class="preview-topbar"><span class="preview-lights"><i></i><i></i><i></i></span><span>ACTUAL GAMEPLAY FEED // LIVE ENGINE</span><span class="preview-live">LIVE</span></div>
+          <div class="preview-topbar"><span class="preview-lights"><i></i><i></i><i></i></span><span>RECORDED GAMEPLAY // REAL GAME ENGINE</span><span class="preview-live">REPLAY</span></div>
           <div class="preview-stage">
             <video id="previewVideo" autoplay muted loop playsinline preload="auto" aria-label="Recorded VOID SPACE gameplay footage"><source src="/static/void-space-gameplay.webm" type="video/webm"></video><canvas id="previewCanvas" aria-label="Gameplay recording capture surface"></canvas>
-            <div class="preview-hud"><div class="preview-chip">SCORE <b id="previewScore">00000</b><br>WAVE <b id="previewWave">01</b><br>WEAPON <b id="previewWeapon">PULSE</b></div><div class="preview-chip" style="text-align:right">HULL <b id="previewHull">100%</b><br>ENERGY <b id="previewEnergy">100%</b><br>THREAT <b id="previewThreat" style="color:#f2b9e8">SCANNING</b></div></div>
-            <div class="preview-boss">NOVA COLOSSUS<div class="preview-boss-bar"><span></span></div></div>
+            <div class="preview-video-controls"><span>REAL GAMEPLAY FOOTAGE</span><div><button type="button" id="previewMuteButton" aria-label="Turn gameplay sound on">SOUND OFF</button><button type="button" id="previewReplayButton" aria-label="Replay gameplay footage">REPLAY ↻</button></div></div>
           </div>
-          <div class="preview-caption"><b>INCOMING: NOVA COLOSSUS</b><span>PHASE 02 / 03</span></div>
+          <div class="preview-caption"><b>VOID SPACE — GAMEPLAY REEL</b><span>RECORDED IN-GAME · LOOPING</span></div>
         </div>
       </section>
       <section>
@@ -3587,6 +3586,12 @@ document.getElementById("landingMenuButton").addEventListener("click",()=>{windo
 document.getElementById("landingHowButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("howScreen");});
 document.getElementById("landingModesButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("modeScreen");});
 (function initLandingPreview(){
+ const video=document.getElementById("previewVideo");
+ const muteButton=document.getElementById("previewMuteButton");
+ const replayButton=document.getElementById("previewReplayButton");
+ if(video&&muteButton){muteButton.addEventListener("click",()=>{video.muted=!video.muted;muteButton.textContent=video.muted?"SOUND OFF":"SOUND ON";muteButton.setAttribute("aria-label",video.muted?"Turn gameplay sound on":"Mute gameplay sound");});}
+ if(video&&replayButton){replayButton.addEventListener("click",()=>{video.currentTime=0;const p=video.play();if(p&&p.catch)p.catch(()=>{});});}
+ if(video){video.addEventListener("error",()=>{const caption=document.querySelector(".preview-caption span");if(caption)caption.textContent="GAMEPLAY VIDEO UNAVAILABLE";});video.addEventListener("playing",()=>{const caption=document.querySelector(".preview-caption span");if(caption)caption.textContent="RECORDED IN-GAME · LOOPING";});}
  const recordMode=new URLSearchParams(window.location.search).get("record")==="1";
  if(recordMode)document.body.classList.add("gameplay-record-mode");
  const preview=document.getElementById("previewCanvas"),gameCanvas=document.getElementById("game");

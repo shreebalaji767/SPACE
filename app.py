@@ -3550,7 +3550,7 @@ document.getElementById("landingModesButton").addEventListener("click",()=>showS
  const bossTitle=frame&&frame.querySelector(".preview-boss"),caption=frame&&frame.querySelector(".preview-caption b"),phaseLabel=frame&&frame.querySelector(".preview-caption span");
  let w=1,h=1,dpr=1,last=0,elapsed=0,shotClock=0,started=false;
  function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=Math.max(1,r.width);h=Math.max(1,r.height);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
- function startShowcase(){if(started)return;started=true;currentGameMode="survival";startGame();showScreen("landingScreen");keys.KeyW=true;keys.KeyD=true;}
+ function startShowcase(){if(started)return;started=true;currentGameMode="survival";if(!running)startGame();showScreen("landingScreen");keys.KeyW=true;keys.KeyD=true;}
  function frameLoop(now){
   requestAnimationFrame(frameLoop);
   if(!document.getElementById("landingScreen").classList.contains("active")){last=now;return;}

@@ -1061,6 +1061,7 @@ body::before{
     <button data-hold="KeyS" aria-label="Move backward">↓ BRAKE</button>
     <button class="fire-control" data-hold="Space" aria-label="Fire weapon">✦ FIRE</button>
     <button data-action="bomb" aria-label="Use bomb">◎ BOMB</button>
+    <button data-action="ultimate" aria-label="Use ship ultimate">✦ ULTIMATE</button>
     <button data-hold="ShiftLeft" aria-label="Boost">⚡ BOOST</button>
     <button class="pause-control" data-action="pause" aria-label="Pause game">Ⅱ PAUSE</button>
 </div>
@@ -1085,6 +1086,7 @@ body::before{
         <button class="touch-btn" id="fireTouch">
             FIRE
         </button>
+        <button class="touch-btn" id="ultimateTouch">ULTIMATE</button>
 
     </div>
 
@@ -1525,6 +1527,7 @@ if(gameControls){
         button.addEventListener("click",()=>{
             if(button.dataset.action === "bomb") useBomb();
             if(button.dataset.action === "pause") togglePause();
+            if(button.dataset.action === "ultimate") useShipUltimate();
         });
     });
 }
@@ -1724,6 +1727,7 @@ const boostTouch =
 
 const bombTouch =
     document.getElementById("bombTouch");
+const ultimateTouch=document.getElementById("ultimateTouch");
 
 function touchHold(element,key){
 
@@ -1753,6 +1757,7 @@ bombTouch.addEventListener("pointerdown",(e)=>{
     e.preventDefault();
     useBomb();
 });
+ultimateTouch.addEventListener("pointerdown",e=>{e.preventDefault();useShipUltimate();});
 
 
 /* =========================================================
@@ -1925,6 +1930,7 @@ function spawnEnemy(){
         };
     }
 
+    if(currentGameMode==="hardcore"){enemy.health*=1.35;enemy.maxHealth=enemy.health;enemy.speed*=1.12;enemy.damage*=1.25;}
     enemies.push(enemy);
 }
 
@@ -1936,6 +1942,7 @@ function spawnEnemy(){
 function spawnBoss(){
     const kinds=[{name:"DREADNOUGHT",color:"#bd65ff"},{name:"VOID WRAITH",color:"#57e8ff"},{name:"NOVA COLOSSUS",color:"#ff8bca"}];
     const kindIndex=currentGameMode==="bossrush"?(wave-1)%kinds.length:Math.max(0,Math.floor(wave/5)-1)%kinds.length,kind=kinds[kindIndex];
+    const bossHealth=(900+wave*150)*(currentGameMode==="hardcore"?1.25:1);
     enemies.push({
 
         x:W/2,
@@ -1948,9 +1955,9 @@ function spawnBoss(){
 
         speed:55,
 
-        health:900 + wave*150,
+        health:bossHealth,
 
-        maxHealth:900 + wave*150,
+        maxHealth:bossHealth,
 
         damage:35,
 

@@ -1110,7 +1110,7 @@ body::before{
     </div>
 </div>
 
-<div class="screen" id="hangarScreen"><div class="panel"><h1>SHIP HANGAR</h1><p style="color:#9dcaff;margin:12px">Choose a ship with unique stats.</p><div id="shipCards"></div><button id="skillTreeButton">SHIP SKILL TREE</button><button id="hangarBackButton">BACK</button></div></div>
+<div class="screen" id="hangarScreen"><div class="panel"><h1>SHIP HANGAR</h1><p style="color:#9dcaff;margin:12px">Choose a ship with unique stats.</p><div id="shipCards"></div><h2 style="color:#8be2ff;margin:24px 0 10px">WEAPON ARMORY</h2><p style="color:#9dcaff;margin:8px">Unlock permanent weapons with credits. All weapons remain available on this device.</p><div id="weaponCards"></div><button id="skillTreeButton">SHIP SKILL TREE</button><button id="hangarBackButton">BACK</button></div></div>
 <div class="screen" id="skillTreeScreen"><div class="panel"><h1>SHIP SKILL TREE</h1><p style="color:#9dcaff;margin:12px">Permanent upgrades for the currently selected ship. Ranks are saved on this device.</p><div class="neon-stats"><span>◈ CREDITS <b id="skillCoins">0</b></span><span>SHIP <b id="skillShipName">NEON STRIKER</b></span></div><div id="skillTreeCards"></div><button id="skillTreeBackButton">BACK TO HANGAR</button></div></div>
 <div class="screen" id="missionScreen"><div class="panel"><h1>MISSIONS & RECORDS</h1><div id="missionContent" style="line-height:2;color:#c7d9ff;margin:20px 0"></div><button id="missionBackButton">BACK</button></div></div>
 <div class="screen" id="modeScreen"><div class="panel"><h1>SELECT GAME MODE</h1><p style="color:#9dcaff;margin:10px">Choose your challenge. All modes are free.</p><div class="feature-grid">
@@ -1211,7 +1211,7 @@ let H = 0;
 let DPR = 1;
 
 function resize(){
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    DPR = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.5 : 2);
 
     W = window.innerWidth;
     H = window.innerHeight;
@@ -1448,7 +1448,7 @@ function createStars(){
 
     stars = [];
 
-    const count = Math.max(100,Math.floor(W*H/9000));
+    const count = Math.max(80,Math.min(240,Math.floor(W*H/9000)));
 
     for(let i=0;i<count;i++){
 
@@ -1469,7 +1469,7 @@ function createStars(){
 
 function resetGame(){
 
-    score=0;wave=1;kills=0;killCombo=0;killComboTimer=0;runCoins=0;runXP=0;runTime=0;runEndedByVictory=false;runWeaponIndex=0;weaponLevel=0;dailyRngState=seedFromDate();hazardTimer=4;asteroids=[];cinematicSlow=0;screenFlash=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
+    score=0;wave=1;kills=0;killCombo=0;killComboTimer=0;runCoins=0;runXP=0;runTime=0;runEndedByVictory=false;runWeaponIndex=Math.max(0,weaponDefs.findIndex(w=>w.id===selectedWeapon));weaponLevel=0;dailyRngState=seedFromDate();hazardTimer=4;asteroids=[];cinematicSlow=0;screenFlash=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
 
     waveTimer = 0;
     enemySpawnTimer = 0;
@@ -2129,7 +2129,7 @@ function spawnBoss(){
 function spawnPowerup(seeded=false){
     const rnd=seeded&&currentGameMode==="daily"?challengeRandom:gameRandom;
 
-    const types=["health","energy","rapid","bomb","weapon","shield","coins"];
+    const types=["health","energy","rapid","bomb","weapon","shield","coins","crate"];
 
     powerups.push({
 
@@ -2148,8 +2148,8 @@ function spawnPowerup(seeded=false){
 
 function collectPowerup(power){
 
-    if(power.type==="crate"){const roll=Math.random();if(roll<.3){awardVoidCoins(100);toastNotice("REWARD CRATE: +100 CREDITS","#ffd36e");}else if(roll<.52){player.health=Math.min(player.maxHealth,player.health+45);awardVoidCoins(25);toastNotice("REWARD CRATE: HULL +45 / +25 CREDITS","#7affc2");}else if(roll<.72){player.energy=Math.min(player.maxEnergy,player.energy+60);toastNotice("REWARD CRATE: ENERGY SURGE","#73e7ff");}else if(roll<.88){runUpgrades.damage++;toastNotice("REWARD CRATE: OVERCHARGED CORE","#ff91ef");}else{runUpgrades.bomb++;player.energy=Math.min(player.maxEnergy,player.energy+25);toastNotice("REWARD CRATE: NOVA AMPLIFIER","#c8a0ff");}createBurst(power.x,power.y,38,7,"#ffd36e");return;}
-    if(power.type==="weapon"){runWeaponIndex=(runWeaponIndex+1)%weaponDefs.length;weaponLevel=Math.min(5,weaponLevel+1);toastNotice("WEAPON ACQUIRED: "+weaponDefs[runWeaponIndex].name);}
+    if(power.type==="crate"){const roll=Math.random(),locked=weaponDefs.filter(w=>!ownedWeapons.includes(w.id));if(locked.length&&roll<.24){const unlock=locked[Math.floor(gameRandom()*locked.length)];ownedWeapons.push(unlock.id);selectedWeapon=unlock.id;runWeaponIndex=weaponDefs.findIndex(w=>w.id===unlock.id);awardVoidCoins(35);toastNotice("RARE CRATE UNLOCKED: "+unlock.name+" • EQUIPPED","#ffd36e");}else if(roll<.48){awardVoidCoins(100);toastNotice("REWARD CRATE: +100 CREDITS","#ffd36e");}else if(roll<.66){player.health=Math.min(player.maxHealth,player.health+45);awardVoidCoins(25);toastNotice("REWARD CRATE: HULL +45 / +25 CREDITS","#7affc2");}else if(roll<.80){player.energy=Math.min(player.maxEnergy,player.energy+60);toastNotice("REWARD CRATE: ENERGY SURGE","#73e7ff");}else if(roll<.91){runUpgrades.damage++;toastNotice("REWARD CRATE: OVERCHARGED CORE","#ff91ef");}else{runUpgrades.bomb++;player.energy=Math.min(player.maxEnergy,player.energy+25);toastNotice("REWARD CRATE: NOVA AMPLIFIER","#c8a0ff");}saveVoidProfile();renderVoidHangar();createBurst(power.x,power.y,38,7,"#ffd36e");return;}
+    if(power.type==="weapon"){const available=weaponDefs.filter(w=>ownedWeapons.includes(w.id));const current=available.findIndex(w=>w.id===weaponDefs[runWeaponIndex].id);runWeaponIndex=weaponDefs.findIndex(w=>w.id===available[(current+1)%available.length].id);weaponLevel=Math.min(5,weaponLevel+1);toastNotice("WEAPON ACQUIRED: "+weaponDefs[runWeaponIndex].name);}
     else if(power.type==="shield"){player.invincible=Math.max(player.invincible,5);}
     else if(power.type==="coins"){awardVoidCoins(40);}
     else if(power.type === "health"){
@@ -2340,6 +2340,8 @@ function updatePlayer(dt){
                 mouse.x-player.x
             );
     }
+
+    if(keys.TouchFire)shoot();
 
     /*
        FORWARD / BACKWARD
@@ -2607,7 +2609,7 @@ function updateEnemies(dt){
 
         if(enemy.health <= 0){
 
-            score+=enemy.score;kills++;if(!landingShowcaseMode){lifetimeKills++;if(enemy.boss)bossesDefeated++;recordDailyMissionProgress("kills",1);if(enemy.boss)recordDailyMissionProgress("bosses",1);killCombo++;killComboTimer=4;if(killCombo>=5&&killCombo%5===0){const comboReward=15+Math.min(60,killCombo*2);awardVoidCoins(comboReward);toastNotice("COMBO x"+killCombo+"  +"+comboReward+" CREDITS","#ff91ef");createBurst(enemy.x,enemy.y,20,5,"#ff91ef");}checkVoidAchievements();}awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
+            score+=enemy.score;kills++;if(!landingShowcaseMode){lifetimeKills++;if(enemy.boss)bossesDefeated++;recordDailyMissionProgress("kills",1);if(enemy.boss)recordDailyMissionProgress("bosses",1);killCombo++;killComboTimer=4;if(killCombo>=5&&killCombo%5===0){const comboReward=15+Math.min(60,killCombo*2);awardVoidCoins(comboReward);cinematicSlow=Math.max(cinematicSlow,.38);screenFlash=Math.max(screenFlash,.12);toastNotice("COMBO x"+killCombo+"  +"+comboReward+" CREDITS","#ff91ef");createBurst(enemy.x,enemy.y,20,5,"#ff91ef");}checkVoidAchievements();}awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
 
             createBurst(
                 enemy.x,
@@ -2618,6 +2620,7 @@ function updateEnemies(dt){
 
             if(enemy.boss){
 
+                cinematicSlow=Math.max(cinematicSlow,.85);screenFlash=Math.max(screenFlash,.45);toastNotice((enemy.bossName||"BOSS")+" DESTROYED • SECTOR CLEAR","#ffe59b");
                 score+=2000;awardVoidCoins(250+wave*10);awardVoidXP(250);
 
                 for(let p=0;p<3;p++){
@@ -2664,6 +2667,8 @@ function updateEnemies(dt){
 /* =========================================================
    BULLET COLLISIONS
 ========================================================= */
+
+function bossWeakPoint(enemy){if(!enemy||!enemy.boss)return null;const angle=performance.now()/720+(enemy.bossKind||0)*1.4;return{x:enemy.x+Math.cos(angle)*enemy.radius*.58,y:enemy.y+Math.sin(angle)*enemy.radius*.58,active:Math.floor(performance.now()/1700)%2===0};}
 
 function bulletCollisions(){
 
@@ -2726,7 +2731,7 @@ function bulletCollisions(){
                 enemy.radius+bullet.radius
             ){
 
-                const dealt=bullet.damage||(enemy.boss?16:30);enemy.health-=dealt;
+                const weak=bossWeakPoint(enemy),weakHit=!!(weak&&weak.active&&Math.hypot(bullet.x-weak.x,bullet.y-weak.y)<14),dealt=(bullet.damage||(enemy.boss?16:30))*(weakHit?2.75:1);enemy.health-=dealt;if(weakHit){cinematicSlow=Math.max(cinematicSlow,.3);screenFlash=Math.max(screenFlash,.18);toastNotice("WEAK POINT HIT • "+Math.round(dealt),"#ffe59b");createBurst(weak.x,weak.y,18,5,"#ffe59b");}
                 if(bullet.splash){for(const other of enemies){if(other!==enemy&&distance(bullet,other)<bullet.splash){other.health-=dealt*.55;if(bullet.blackhole){other.x+=(bullet.x-other.x)*.12;other.y+=(bullet.y-other.y)*.12;}}}createBurst(bullet.x,bullet.y,30,6,"#c29bff");}
                 if(bullet.chain>0){let left=bullet.chain,origin=enemy;while(left-->0){let target=null,nearest=Infinity;for(const other of enemies){if(other===origin)continue;const d=distance(origin,other);if(d<nearest&&d<190){nearest=d;target=other;}}if(!target)break;target.health-=dealt*.45;createBurst(target.x,target.y,9,3,"#72f7ff");origin=target;}}
 
@@ -3165,6 +3170,8 @@ function drawEnemy(enemy){
 
     ctx.shadowBlur = 0;
 
+    if(enemy.boss){const weak=bossWeakPoint(enemy);if(weak){const dx=weak.x-enemy.x,dy=weak.y-enemy.y,lx=dx*Math.cos(angle)+dy*Math.sin(angle),ly=-dx*Math.sin(angle)+dy*Math.cos(angle);ctx.save();ctx.globalAlpha=weak.active?1:.28;ctx.strokeStyle=weak.active?"#fff1a8":"#b7a9ff";ctx.fillStyle=weak.active?"#fff4c7":"#7e73ba";ctx.lineWidth=3;ctx.shadowBlur=weak.active?24:8;ctx.shadowColor=ctx.strokeStyle;ctx.beginPath();ctx.arc(lx,ly,13+Math.sin(performance.now()/90)*2,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(lx-7,ly);ctx.lineTo(lx+7,ly);ctx.moveTo(lx,ly-7);ctx.lineTo(lx,ly+7);ctx.stroke();ctx.restore();}}
+
     /*
        Enemy health bar
     */
@@ -3444,18 +3451,18 @@ function seedFromDate(){const day=new Date().toISOString().slice(0,10);let h=216
 function gameRandom(){return Math.random();}
 function challengeRandom(){if(currentGameMode!=="daily")return Math.random();dailyRngState=(dailyRngState+0x6D2B79F5)|0;let t=dailyRngState;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;}
 
-let selectedShip="striker",ownedShips=["striker"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
+let selectedShip="striker",ownedShips=["striker"],selectedWeapon="pulse",ownedWeapons=["pulse"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
 const weaponDefs=[
  {id:"pulse",name:"PULSE",color:"#e8f7ff",speed:720,desc:"Reliable energy bolts"},
- {id:"missile",name:"HOMING MISSILES",color:"#ffbf78",speed:390,desc:"Steer toward the nearest target"},
- {id:"shotgun",name:"PLASMA SHOTGUN",color:"#ff8be8",speed:650,desc:"Five-shot spread at close range"},
- {id:"railgun",name:"PHASE RAILGUN",color:"#9fffe5",speed:980,desc:"Heavy shots pierce enemy lines"},
- {id:"chain",name:"CHAIN LIGHTNING",color:"#72f7ff",speed:760,desc:"Arcs damage between nearby foes"},
- {id:"blackhole",name:"SINGULARITY",color:"#c29bff",speed:470,desc:"Impact pulls and damages nearby enemies"}
+ {id:"missile",name:"HOMING MISSILES",color:"#ffbf78",speed:390,cost:250,desc:"Steer toward the nearest target"},
+ {id:"shotgun",name:"PLASMA SHOTGUN",color:"#ff8be8",speed:650,cost:400,desc:"Five-shot spread at close range"},
+ {id:"railgun",name:"PHASE RAILGUN",color:"#9fffe5",speed:980,cost:650,desc:"Heavy shots pierce enemy lines"},
+ {id:"chain",name:"CHAIN LIGHTNING",color:"#72f7ff",speed:760,cost:850,desc:"Arcs damage between nearby foes"},
+ {id:"blackhole",name:"SINGULARITY",color:"#c29bff",speed:470,cost:1200,desc:"Impact pulls and damages nearby enemies"}
 ];
-function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;dailyMissionDate=p.dailyMissionDate||new Date().toISOString().slice(0,10);dailyMissionStats=p.dailyMissionStats&&typeof p.dailyMissionStats==="object"?p.dailyMissionStats:{kills:0,bosses:0};dailyMissionClaims=p.dailyMissionClaims&&typeof p.dailyMissionClaims==="object"?p.dailyMissionClaims:{};if(dailyMissionDate!==new Date().toISOString().slice(0,10)){dailyMissionDate=new Date().toISOString().slice(0,10);dailyMissionStats={kills:0,bosses:0};dailyMissionClaims={};}pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";shipSkills=p.shipSkills&&typeof p.shipSkills==="object"?p.shipSkills:{};for(const id of Object.keys(ships)){if(!shipSkills[id]||typeof shipSkills[id]!=="object")shipSkills[id]={};for(const k of ["hull","thrusters","reactor","weapon"])shipSkills[id][k]=Math.max(0,Math.min(5,Number(shipSkills[id][k])||0));}bestScore=p.best||0;bestWave=p.wave||1;unlockedAchievements=Array.isArray(p.achievements)?p.achievements:[];lifetimeKills=Number(p.lifetimeKills)||0;bossesDefeated=Number(p.bossesDefeated)||0;campaignWins=Number(p.campaignWins)||0;campaignProgress=p.campaignProgress&&typeof p.campaignProgress==="object"?p.campaignProgress:{};modeRecords=p.modeRecords&&typeof p.modeRecords==="object"?p.modeRecords:{};window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){shipSkills={};unlockedAchievements=[];for(const id of Object.keys(ships))shipSkills[id]={hull:0,thrusters:0,reactor:0,weapon:0};}}
-function saveVoidProfile(){try{const profile={version:4,savedAt:Date.now(),dailyMissionDate,dailyMissionStats,dailyMissionClaims,coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,shipSkills,best:bestScore,wave:bestWave,achievements:unlockedAchievements,lifetimeKills,bossesDefeated,campaignWins,campaignProgress,modeRecords,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
+function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;dailyMissionDate=p.dailyMissionDate||new Date().toISOString().slice(0,10);dailyMissionStats=p.dailyMissionStats&&typeof p.dailyMissionStats==="object"?p.dailyMissionStats:{kills:0,bosses:0};dailyMissionClaims=p.dailyMissionClaims&&typeof p.dailyMissionClaims==="object"?p.dailyMissionClaims:{};if(dailyMissionDate!==new Date().toISOString().slice(0,10)){dailyMissionDate=new Date().toISOString().slice(0,10);dailyMissionStats={kills:0,bosses:0};dailyMissionClaims={};}pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];selectedWeapon=weaponDefs.some(w=>w.id===p.weapon)?p.weapon:"pulse";ownedWeapons=Array.isArray(p.weapons)?p.weapons.filter(id=>weaponDefs.some(w=>w.id===id)):["pulse"];if(!ownedWeapons.includes("pulse"))ownedWeapons.unshift("pulse");if(!ownedWeapons.includes(selectedWeapon))selectedWeapon="pulse";if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";shipSkills=p.shipSkills&&typeof p.shipSkills==="object"?p.shipSkills:{};for(const id of Object.keys(ships)){if(!shipSkills[id]||typeof shipSkills[id]!=="object")shipSkills[id]={};for(const k of ["hull","thrusters","reactor","weapon"])shipSkills[id][k]=Math.max(0,Math.min(5,Number(shipSkills[id][k])||0));}bestScore=p.best||0;bestWave=p.wave||1;unlockedAchievements=Array.isArray(p.achievements)?p.achievements:[];lifetimeKills=Number(p.lifetimeKills)||0;bossesDefeated=Number(p.bossesDefeated)||0;campaignWins=Number(p.campaignWins)||0;campaignProgress=p.campaignProgress&&typeof p.campaignProgress==="object"?p.campaignProgress:{};modeRecords=p.modeRecords&&typeof p.modeRecords==="object"?p.modeRecords:{};window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){shipSkills={};unlockedAchievements=[];for(const id of Object.keys(ships))shipSkills[id]={hull:0,thrusters:0,reactor:0,weapon:0};}}
+function saveVoidProfile(){try{const profile={version:5,savedAt:Date.now(),dailyMissionDate,dailyMissionStats,dailyMissionClaims,coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,weapon:selectedWeapon,weapons:ownedWeapons,shipSkills,best:bestScore,wave:bestWave,achievements:unlockedAchievements,lifetimeKills,bossesDefeated,campaignWins,campaignProgress,modeRecords,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
 window.addEventListener("pagehide",saveVoidProfile);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveVoidProfile();});
 function paintMeta(){const vals={metaCoins:bankCoins,metaLevel:pilotLevel,metaBest:bestScore.toLocaleString()};for(const id in vals){const el=document.getElementById(id);if(el)el.textContent=vals[id];}}
@@ -3475,7 +3482,7 @@ const runUpgradeDefs=[
 ["drone","WINGMAN DRONE","Add a side cannon to each volley."]
 ];
 function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;if(landingShowcaseMode){const u=runUpgradeDefs[Math.floor(gameRandom()*runUpgradeDefs.length)];runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20);}if(u[0]==="shield")createBurst(player.x,player.y,22,4);return;}paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>gameRandom()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
-function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
+function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});const weapons=document.getElementById("weaponCards");if(weapons){weapons.innerHTML="";weaponDefs.forEach(w=>{const own=ownedWeapons.includes(w.id),sel=selectedWeapon===w.id,card=document.createElement("div");card.className="ship-card";card.style.borderColor=w.color;const h=document.createElement("h3");h.textContent=w.name+(sel?" • EQUIPPED":own?" • UNLOCKED":"");h.style.color=w.color;card.appendChild(h);const p=document.createElement("p");p.textContent=w.desc+" • projectile speed "+w.speed;card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"EQUIP WEAPON"):"UNLOCK • ◈ "+w.cost;b.disabled=sel||(!own&&bankCoins<(w.cost||0));b.onclick=()=>{if(!own){bankCoins-=w.cost;ownedWeapons.push(w.id)}selectedWeapon=w.id;runWeaponIndex=weaponDefs.findIndex(x=>x.id===w.id);saveVoidProfile();paintMeta();renderVoidHangar();toastNotice("WEAPON EQUIPPED: "+w.name,w.color)};card.appendChild(b);weapons.appendChild(card);});}}
 function renderVoidMissions(){refreshDailyMissions();const host=document.getElementById("missionContent");host.innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p><p>PERMANENT SKILL RANKS: "+Object.values(shipSkills).reduce((n,s)=>n+Object.values(s).reduce((a,v)=>a+v,0),0)+"</p><h2 style=\"color:#8be2ff;margin-top:22px\">DAILY CONTRACTS · "+dailyMissionDate+"</h2><p style=\"color:#a9c6e8\">Complete objectives in a real run to claim free credits and XP. Resets at UTC midnight.</p>";const defs=[{id:"kills",label:"ELIMINATE 10 HOSTILES",goal:10,reward:120,progress:Number(dailyMissionStats.kills)||0},{id:"wave",label:"REACH WAVE 5",goal:5,reward:150,progress:Number(dailyMissionStats.wave)||0},{id:"bosses",label:"DEFEAT A BOSS",goal:1,reward:200,progress:Number(dailyMissionStats.bosses)||0}];for(const d of defs){const card=document.createElement("div");card.className="ship-card";card.style.margin="10px 0";const title=document.createElement("h2");title.textContent=d.label;title.style.color="#ff9cec";card.appendChild(title);const info=document.createElement("p");info.textContent=Math.min(d.progress,d.goal)+"/"+d.goal+" · REWARD ◈ "+d.reward+" + 50 XP"+(dailyMissionClaims[d.id]?" · CLAIMED":"");card.appendChild(info);const b=document.createElement("button");b.textContent=dailyMissionClaims[d.id]?"CLAIMED":d.progress>=d.goal?"CLAIM REWARD":"IN PROGRESS";b.disabled=!!dailyMissionClaims[d.id]||d.progress<d.goal;b.onclick=()=>claimDailyMission(d.id);card.appendChild(b);host.appendChild(card);}}
 const voidSkillDefs=[
  {key:"hull",name:"TITANIUM HULL",desc:"+8 maximum hull per rank",base:100},

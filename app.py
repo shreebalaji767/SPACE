@@ -8,8 +8,10 @@ HTML = r"""
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#02030a">
+<meta name="description" content="VOID SPACE — a neon space survival arcade game. Pilot your ship, defeat enemies and survive endless waves.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop stop-color=%22%2363caff%22/%3E%3Cstop offset=%221%22 stop-color=%22%234d55ff%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22%23040818%22/%3E%3Cpath d=%22M43 32 15 19l7 13-7 13z%22 fill=%22url(%23g)%22 stroke=%22%23d8f4ff%22 stroke-width=%222%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2241%22 cy=%2232%22 r=%224%22 fill=%22%23ffffff%22/%3E%3C/svg%3E">
 
 <title>VOID SPACE</title>
 
@@ -75,6 +77,13 @@ body{
     text-align:center;
 }
 
+.brand-mark{
+    display:block;
+    width:clamp(54px,8vw,78px);
+    height:clamp(54px,8vw,78px);
+    margin:0 auto 12px;
+    filter:drop-shadow(0 0 18px rgba(77,187,255,.6));
+}
 .logo{
     font-size:clamp(42px,9vw,90px);
     font-weight:900;
@@ -244,6 +253,32 @@ button:active{
     color:#55cfff;
 }
 
+#gameControls{
+    display:none;
+    position:fixed;
+    z-index:12;
+    left:50%;
+    bottom:max(16px, env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    width:min(760px, calc(100vw - 28px));
+    padding:10px;
+    border:1px solid rgba(100,190,255,.22);
+    border-radius:16px;
+    background:rgba(0,7,20,.72);
+    backdrop-filter:blur(10px);
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:7px;
+}
+#gameControls button{
+    min-width:0;
+    margin:0;
+    min-height:44px;
+    padding:8px 5px;
+    font-size:clamp(10px,1.2vw,12px);
+    letter-spacing:.3px;
+}
+#gameControls .fire-control{border-color:rgba(255,110,130,.7);}
+#gameControls .pause-control{border-color:rgba(255,210,110,.7);}
 #touchControls{
     display:none;
     position:fixed;
@@ -369,6 +404,44 @@ button:active{
         cursor:default;
     }
 }
+
+/* Adaptive layout, safe areas and accessible focus states */
+button:focus-visible{
+    outline:3px solid #a8e8ff;
+    outline-offset:3px;
+}
+.screen{padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));}
+.panel{overscroll-behavior:contain;}
+#hud{top:max(12px,env(safe-area-inset-top));}
+@media (pointer:fine) and (min-width:701px){
+    #gameControls{display:grid;}
+}
+@media (max-width:700px){
+    #gameControls{display:none !important;}
+    #joystick{left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));width:clamp(100px,27vw,140px);height:clamp(100px,27vw,140px);}
+    #stick{left:50%;top:50%;transform:translate(-50%,-50%);width:42%;height:42%;}
+    .touch-buttons{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));gap:8px;}
+    .touch-btn{width:clamp(66px,18vw,82px);height:52px;font-size:11px;padding:0;}
+    #fireTouch{width:clamp(78px,22vw,100px);height:clamp(78px,22vw,100px);}
+    #hud{left:8px;right:8px;top:max(8px,env(safe-area-inset-top));}
+    .hud-row{gap:6px;}
+    .hud-box{max-width:34vw;padding:6px 7px;font-size:clamp(9px,2.5vw,11px);}
+    #healthOuter,#energyOuter{width:clamp(64px,20vw,110px);}
+}
+@media (max-height:520px) and (orientation:landscape){
+    .panel{padding:14px 18px;max-height:94dvh;}
+    .subtitle{margin-bottom:12px;}
+    .menu-buttons{gap:0;}
+    button{min-height:40px;padding:8px 14px;margin:3px;}
+    #joystick{width:94px;height:94px;}
+    #stick{width:40px;height:40px;}
+    .touch-buttons{flex-direction:row;align-items:flex-end;}
+    #fireTouch{width:68px;height:68px;}
+}
+@media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{scroll-behavior:auto !important;transition:none !important;animation:none !important;}
+}
+
 </style>
 </head>
 
@@ -410,6 +483,13 @@ button:active{
 <div class="screen active" id="menuScreen">
     <div class="panel">
 
+        <svg class="brand-mark" viewBox="0 0 80 80" role="img" aria-label="VOID SPACE logo" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="shipGlow" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8be2ff"/><stop offset="1" stop-color="#5365ff"/></linearGradient></defs>
+            <rect x="3" y="3" width="74" height="74" rx="20" fill="#071329" stroke="#397eb7" stroke-opacity=".65"/>
+            <circle cx="40" cy="40" r="27" fill="none" stroke="#28618c" stroke-dasharray="3 6"/>
+            <path d="M55 40 21 24l8 16-8 16z" fill="url(#shipGlow)" stroke="#e5f8ff" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="49" cy="40" r="4" fill="#fff"/>
+        </svg>
         <div class="logo">VOID</div>
         <div class="subtitle">SPACE</div>
 
@@ -601,6 +681,17 @@ button:active{
         </button>
 
     </div>
+</div>
+
+<!-- DESKTOP / KEYBOARD-ASSISTED CONTROLS -->
+<div id="gameControls" aria-label="Game controls">
+    <button data-hold="KeyA" aria-label="Rotate left">↶ LEFT</button>
+    <button data-hold="KeyW" aria-label="Move forward">↑ THRUST</button>
+    <button data-hold="KeyS" aria-label="Move backward">↓ BRAKE</button>
+    <button class="fire-control" data-hold="Space" aria-label="Fire weapon">✦ FIRE</button>
+    <button data-action="bomb" aria-label="Use bomb">◎ BOMB</button>
+    <button data-hold="ShiftLeft" aria-label="Boost">⚡ BOOST</button>
+    <button class="pause-control" data-action="pause" aria-label="Pause game">Ⅱ PAUSE</button>
 </div>
 
 <!-- TOUCH -->
@@ -1011,6 +1102,45 @@ document.getElementById("settingsBackButton")
         showScreen("menuScreen");
     });
 
+
+/* =========================================================
+   ON-SCREEN DESKTOP CONTROL DOCK
+========================================================= */
+const gameControls = document.getElementById("gameControls");
+if(gameControls){
+    gameControls.querySelectorAll("[data-hold]").forEach((button)=>{
+        const code = button.dataset.hold;
+        const press = (event)=>{
+            event.preventDefault();
+            keys[code] = true;
+            if(code === "Space") keys.MouseFire = true;
+        };
+        const release = (event)=>{
+            event.preventDefault();
+            keys[code] = false;
+            if(code === "Space") keys.MouseFire = false;
+        };
+        button.addEventListener("pointerdown",press);
+        ["pointerup","pointercancel","pointerleave","lostpointercapture"].forEach(type=>{
+            button.addEventListener(type,release);
+        });
+        button.addEventListener("contextmenu",event=>event.preventDefault());
+    });
+    gameControls.querySelectorAll("[data-action]").forEach(button=>{
+        button.addEventListener("click",()=>{
+            if(button.dataset.action === "bomb") useBomb();
+            if(button.dataset.action === "pause") togglePause();
+        });
+    });
+}
+
+/* Keep held controls from sticking when focus changes or the tab is hidden. */
+document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){
+        for(const code in keys) keys[code] = false;
+        if(running && !paused) togglePause();
+    }
+});
 
 /* =========================================================
    KEYBOARD
@@ -2747,6 +2877,10 @@ function updateHUD(){
     document.getElementById("hud")
         .style.display =
             running ? "block" : "none";
+
+    if(gameControls){
+        gameControls.style.display = running && !paused && window.matchMedia("(pointer: fine) and (min-width: 701px)").matches ? "grid" : "none";
+    }
 }
 
 

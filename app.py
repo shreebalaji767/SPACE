@@ -1470,8 +1470,9 @@ function resetGame(){
    START / PAUSE / END
 ========================================================= */
 
-function startGame(){
+function startGame(isShowcase=false){
 
+    landingShowcaseMode=!!isShowcase;
     initAudio();
 
     if(gameOverTimer){
@@ -1511,6 +1512,8 @@ function endGame(victory=false){
     running = false;
     paused = false;
     runEndedByVictory=!!victory;
+    // The landing showcase uses the real simulation but must never grant progression.
+    if(landingShowcaseMode)return;
     document.querySelector("#gameOverScreen h1").textContent=victory?"SECTOR CLEARED":"GAME OVER";
     if(victory){campaignWins++;campaignProgress[currentRoute]=(campaignProgress[currentRoute]||0)+1;awardVoidCoins(500+wave*25);awardVoidXP(300);createBurst(player.x,player.y,150,12,"#ffe9a6");screenFlash=.9;}
     modeRecords[currentGameMode]=Math.max(modeRecords[currentGameMode]||0,score);
@@ -2559,7 +2562,7 @@ function updateEnemies(dt){
 
         if(enemy.health <= 0){
 
-            score+=enemy.score;kills++;lifetimeKills++;if(enemy.boss)bossesDefeated++;checkVoidAchievements();awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
+            score+=enemy.score;kills++;if(!landingShowcaseMode){lifetimeKills++;if(enemy.boss)bossesDefeated++;checkVoidAchievements();}awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
 
             createBurst(
                 enemy.x,
@@ -3391,7 +3394,7 @@ requestAnimationFrame(gameLoop);
 
 /* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
-let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVictory=false,runWeaponIndex=0,weaponLevel=0,asteroids=[],hazardTimer=5,cinematicSlow=0,screenFlash=0,toastTimer=0,toastMessage="",toastColor="#8be2ff",dailyRngState=1;
+let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVictory=false,runWeaponIndex=0,weaponLevel=0,asteroids=[],hazardTimer=5,cinematicSlow=0,screenFlash=0,toastTimer=0,toastMessage="",toastColor="#8be2ff",dailyRngState=1,landingShowcaseMode=false;
 let unlockedAchievements=[],lifetimeKills=0,bossesDefeated=0,campaignWins=0,campaignProgress={},modeRecords={};
 function seedFromDate(){const day=new Date().toISOString().slice(0,10);let h=2166136261;for(let i=0;i<day.length;i++){h^=day.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0||1;}
 function gameRandom(){return Math.random();}
@@ -3412,8 +3415,8 @@ function saveVoidProfile(){try{const profile={version:3,savedAt:Date.now(),coins
 window.addEventListener("pagehide",saveVoidProfile);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveVoidProfile();});
 function paintMeta(){const vals={metaCoins:bankCoins,metaLevel:pilotLevel,metaBest:bestScore.toLocaleString()};for(const id in vals){const el=document.getElementById(id);if(el)el.textContent=vals[id];}}
-function awardVoidXP(n){runXP+=n;xpProgress+=n;while(xpProgress>=xpNext){xpProgress-=xpNext;pilotLevel++;xpNext=Math.round(xpNext*1.2);offerVoidUpgrades();}saveVoidProfile();paintMeta();}
-function awardVoidCoins(n){runCoins+=n;bankCoins+=n;saveVoidProfile();paintMeta();}
+function awardVoidXP(n){if(landingShowcaseMode)return;runXP+=n;xpProgress+=n;while(xpProgress>=xpNext){xpProgress-=xpNext;pilotLevel++;xpNext=Math.round(xpNext*1.2);offerVoidUpgrades();}saveVoidProfile();paintMeta();}
+function awardVoidCoins(n){if(landingShowcaseMode)return;runCoins+=n;bankCoins+=n;saveVoidProfile();paintMeta();}
 const runUpgradeDefs=[
 ["damage","OVERCHARGED CORE","+12 weapon damage per stack."],
 ["fire","RAPID-FIRE COILS","Shoot faster."],
@@ -3480,6 +3483,7 @@ const achievementDefs=[
 ];
 function toastNotice(message,color="#8be2ff"){toastMessage=message;toastColor=color;toastTimer=2.8;}
 function checkVoidAchievements(){
+ if(landingShowcaseMode)return;
  if(!Array.isArray(unlockedAchievements))unlockedAchievements=[];
  for(const def of achievementDefs){if(!unlockedAchievements.includes(def.id)&&def.test()){unlockedAchievements.push(def.id);toastNotice("ACHIEVEMENT UNLOCKED: "+def.name,"#ffe59b");saveVoidProfile();}}
 }
@@ -3538,10 +3542,10 @@ window.addEventListener("error",(event)=>{
 
 
 /* LANDING PAGE ACTIONS + ACTUAL GAME-ENGINE PREVIEW */
-document.getElementById("landingPlayButton").addEventListener("click",()=>{currentGameMode="survival";startGame();});
-document.getElementById("landingMenuButton").addEventListener("click",()=>showScreen("menuScreen"));
-document.getElementById("landingHowButton").addEventListener("click",()=>showScreen("howScreen"));
-document.getElementById("landingModesButton").addEventListener("click",()=>showScreen("modeScreen"));
+document.getElementById("landingPlayButton").addEventListener("click",()=>{currentGameMode="survival";startGame(false);});
+document.getElementById("landingMenuButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("menuScreen");});
+document.getElementById("landingHowButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("howScreen");});
+document.getElementById("landingModesButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("modeScreen");});
 (function initLandingPreview(){
  const canvas=document.getElementById("previewCanvas"),gameCanvas=document.getElementById("game");
  if(!canvas||!gameCanvas)return;
@@ -3550,14 +3554,16 @@ document.getElementById("landingModesButton").addEventListener("click",()=>showS
  const bossTitle=frame&&frame.querySelector(".preview-boss"),caption=frame&&frame.querySelector(".preview-caption b"),phaseLabel=frame&&frame.querySelector(".preview-caption span");
  let w=1,h=1,dpr=1,last=0,elapsed=0,shotClock=0,started=false;
  function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=Math.max(1,r.width);h=Math.max(1,r.height);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
- function startShowcase(){if(started)return;started=true;currentGameMode="survival";if(!running)startGame();showScreen("landingScreen");keys.KeyW=true;keys.KeyD=true;}
+ function startShowcase(){if(started&&landingShowcaseMode)return;started=true;currentGameMode="survival";if(!running||!landingShowcaseMode)startGame(true);showScreen("landingScreen");keys.KeyW=true;keys.KeyD=true;}
+ function stopShowcase(){if(landingShowcaseMode){landingShowcaseMode=false;running=false;paused=false;}keys.KeyW=false;keys.KeyD=false;started=false;}
+ window.stopVoidLandingShowcase=stopShowcase;
  function frameLoop(now){
   requestAnimationFrame(frameLoop);
   if(!document.getElementById("landingScreen").classList.contains("active")){last=now;return;}
-  if(!started)startShowcase();
+  if(!started||!landingShowcaseMode)startShowcase();
   const dt=Math.min(.05,(now-(last||now))/1000);last=now;elapsed+=dt;shotClock-=dt;
   if(running&&!paused&&shotClock<=0){shoot();shotClock=.115;}
-  if(!running&&started){startGame();showScreen("landingScreen");keys.KeyW=true;keys.KeyD=true;}
+  if(!running&&started){startGame(true);showScreen("landingScreen");keys.KeyW=true;keys.KeyD=true;}
   ctx.clearRect(0,0,w,h);ctx.fillStyle="#050713";ctx.fillRect(0,0,w,h);
   // Mirror the production game canvas: all ship/enemy rendering, bullets, particles and explosions come from the real game loop.
   ctx.drawImage(gameCanvas,0,0,gameCanvas.width||1,gameCanvas.height||1,0,0,w,h);
@@ -3590,8 +3596,7 @@ try{
   }
 }catch(e){}
 loadVoidProfile();createStars();updateHUD();paintMeta();
-// Run the real game simulation behind the landing page for the gameplay mirror.
-if(document.getElementById('landingScreen')&&document.getElementById('landingScreen').classList.contains('active')){try{currentGameMode='survival';startGame();showScreen('landingScreen');keys.KeyW=true;keys.KeyD=true;}catch(e){console.warn('Landing gameplay preview could not start',e);}}
+// The landing showcase starts itself in showcase-only mode on its first animation frame.
 for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}
 
 </script>
@@ -3635,7 +3640,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v6";
+const CACHE = "void-space-v7";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

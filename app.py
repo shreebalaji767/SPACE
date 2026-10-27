@@ -910,10 +910,10 @@ body::before{
           <div class="landing-trust"><span>✦ <b>7 GAME MODES</b></span><span>◈ <b>4 SHIPS</b></span><span>⬡ <b>LOCAL SAVES</b></span></div>
         </div>
         <div class="preview-frame" aria-label="Animated gameplay preview">
-          <div class="preview-topbar"><span class="preview-lights"><i></i><i></i><i></i></span><span>LIVE COMBAT FEED // SECTOR 07</span><span class="preview-live">SIMULATION</span></div>
+          <div class="preview-topbar"><span class="preview-lights"><i></i><i></i><i></i></span><span>ACTUAL GAMEPLAY FEED // LIVE ENGINE</span><span class="preview-live">LIVE</span></div>
           <div class="preview-stage">
             <canvas id="previewCanvas" aria-label="Animated preview showing a starfighter fighting enemies"></canvas>
-            <div class="preview-hud"><div class="preview-chip">SCORE <b id="previewScore">02480</b><br>WAVE <b>08</b><br>WEAPON <b>PHASE RAIL</b></div><div class="preview-chip" style="text-align:right">HULL <b>87%</b><br>ENERGY <b>FULL</b><br>THREAT <b style="color:#f2b9e8">BOSS</b></div></div>
+            <div class="preview-hud"><div class="preview-chip">SCORE <b id="previewScore">00000</b><br>WAVE <b id="previewWave">01</b><br>WEAPON <b id="previewWeapon">PULSE</b></div><div class="preview-chip" style="text-align:right">HULL <b id="previewHull">100%</b><br>ENERGY <b id="previewEnergy">100%</b><br>THREAT <b id="previewThreat" style="color:#f2b9e8">SCANNING</b></div></div>
             <div class="preview-boss">NOVA COLOSSUS<div class="preview-boss-bar"><span></span></div></div>
           </div>
           <div class="preview-caption"><b>INCOMING: NOVA COLOSSUS</b><span>PHASE 02 / 03</span></div>
@@ -3568,14 +3568,14 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
  const preview=document.getElementById("previewCanvas"),gameCanvas=document.getElementById("game");
  if(!preview||!gameCanvas)return;
  const ctx=preview.getContext("2d",{alpha:false}),frame=preview.closest(".preview-frame");
- const scoreEl=document.getElementById("previewScore"),bossBar=frame&&frame.querySelector(".preview-boss-bar span");
+ const scoreEl=document.getElementById("previewScore"),waveEl=document.getElementById("previewWave"),weaponEl=document.getElementById("previewWeapon"),hullEl=document.getElementById("previewHull"),energyEl=document.getElementById("previewEnergy"),threatEl=document.getElementById("previewThreat"),bossBar=frame&&frame.querySelector(".preview-boss-bar span");
  const bossTitle=frame&&frame.querySelector(".preview-boss"),caption=frame&&frame.querySelector(".preview-caption b"),phaseLabel=frame&&frame.querySelector(".preview-caption span");
  let w=1,h=1,dpr=1,last=0,autoplayTime=0,nextBomb=5,nextUltimate=9,active=false,restarting=false;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function resize(){const r=preview.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=Math.max(1,r.width);h=Math.max(1,r.height);preview.width=Math.round(w*dpr);preview.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
  function start(){
    if(active||!document.getElementById("landingScreen").classList.contains("active"))return;
-   active=true;restarting=false;autoplayTime=0;nextBomb=4;nextUltimate=8;
+   active=true;restarting=false;autoplayTime=0;nextBomb=4;nextUltimate=8;for(const k of Object.keys(keys))keys[k]=false;
    currentGameMode="survival";
    startGame(true);
    showScreen("landingScreen");
@@ -3584,6 +3584,7 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
  }
  function stop(){
    active=false;restarting=false;
+   for(const k of Object.keys(keys))keys[k]=false;
    if(landingShowcaseMode){running=false;paused=false;landingShowcaseMode=false;}
    const hud=document.getElementById("hud");if(hud)hud.style.display="none";
    if(gameControls)gameControls.style.display="none";
@@ -3615,9 +3616,15 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
        autoplay(dt);
        try{ctx.drawImage(gameCanvas,0,0,gameCanvas.width,gameCanvas.height,0,0,w,h);}catch(e){}
        if(scoreEl)scoreEl.textContent=String(Math.floor(score)).padStart(5,"0");
-       if(bossBar){const boss=enemies.find(e=>e.boss);bossBar.style.width=(boss?clamp(boss.health/(boss.maxHealth||boss.health)*100,8,100):0)+"%";}
-       if(bossTitle){const boss=enemies.find(e=>e.boss);bossTitle.textContent=boss?"LIVE BOSS ENCOUNTER":"LIVE SURVIVAL RUN";}
-       if(caption)caption.textContent= enemies.some(e=>e.boss)?"ACTUAL BOSS FIGHT — LIVE GAME ENGINE":runUpgrades.critical?"ACTUAL COMBAT — MULTI-SHOT UPGRADE":"ACTUAL GAMEPLAY — ENEMIES, WEAPONS & COLLISIONS";
+       if(waveEl)waveEl.textContent=String(wave).padStart(2,"0");
+       if(weaponEl)weaponEl.textContent=weaponDefs[runWeaponIndex].name+(weaponLevel?" +"+weaponLevel:"");
+       if(hullEl)hullEl.textContent=Math.round(clamp(player.health/player.maxHealth*100,0,100))+"%";
+       if(energyEl)energyEl.textContent=Math.round(clamp(player.energy/player.maxEnergy*100,0,100))+"%";
+       const boss=enemies.find(e=>e.boss);
+       if(threatEl)threatEl.textContent=boss?"BOSS":enemies.length?"HOSTILES":"SCANNING";
+       if(bossBar){bossBar.style.width=(boss?clamp(boss.health/(boss.maxHealth||boss.health)*100,8,100):0)+"%";}
+       if(bossTitle&&bossTitle.firstChild)bossTitle.firstChild.nodeValue=boss?"LIVE BOSS ENCOUNTER":"SURVIVAL SECTOR";
+       if(caption)caption.textContent=boss?"ACTUAL BOSS FIGHT — LIVE GAME ENGINE":runUpgrades.critical?"ACTUAL COMBAT — MULTI-SHOT UPGRADE":"ACTUAL GAMEPLAY — ENEMIES, WEAPONS & COLLISIONS";
        if(phaseLabel)phaseLabel.textContent="LIVE PREVIEW • NO SAVE OR REWARDS";
      }else if(active&&!restarting){
        // If the showcase pilot is destroyed, reset a fresh authentic run.
@@ -3694,7 +3701,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v10";
+const CACHE = "void-space-v11";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

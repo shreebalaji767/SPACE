@@ -11,7 +11,7 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 - **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.
 - **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
 - **Interactive environments:** destructible asteroids drift through each run, damage the ship on contact, and can drop credits when destroyed. Campaign routes tint the hazard fields.
-- **Six game modes:** Survival, faster-scaling Endless, Boss Rush, three-minute Time Attack, tougher Hardcore, and **Daily Seed** — a deterministic challenge whose random sequence is seeded by the UTC date.
+- **Seven game modes:** Survival, faster-scaling Endless, Boss Rush, three-minute Time Attack, tougher Hardcore, **Daily Seed** — a reproducible challenge whose procedural enemy/hazard sequence is seeded by the UTC date — and the multi-sector Campaign.
 - **Three-sector campaign:** choose Derelict Belt, Ion Storm, or Singularity Edge; clear waves and defeat the sector boss to earn a completion bonus.
 - **Ship ultimates:** press **E** or use the on-screen ULTIMATE control. The Striker detonates a nova, Phantom phases through danger, Titan triggers an overdrive blast, and Spectre releases a screen-wide prism nova.
 - **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, salvage magnet, phase-piercing shots, shield charges, stronger bombs, hull regeneration, and side-cannon drones.

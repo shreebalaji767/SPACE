@@ -11,7 +11,7 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 - **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.
 - **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
 - **Interactive environments:** destructible asteroids drift through each run, damage the ship on contact, and can drop credits when destroyed. Campaign routes tint the hazard fields.
-- **Five game modes:** Survival, Endless, Boss Rush, three-minute Time Attack, and tougher Hardcore.
+- **Six game modes:** Survival, faster-scaling Endless, Boss Rush, three-minute Time Attack, tougher Hardcore, and **Daily Seed** — a deterministic challenge whose random sequence is seeded by the UTC date.
 - **Three-sector campaign:** choose Derelict Belt, Ion Storm, or Singularity Edge; clear waves and defeat the sector boss to earn a completion bonus.
 - **Ship ultimates:** press **E** or use the on-screen ULTIMATE control. The Striker detonates a nova, Phantom phases through danger, Titan triggers an overdrive blast, and Spectre releases a screen-wide prism nova.
 - **Build variety:** weapon damage, rapid fire, engine, hull, critical/multi-shot, salvage magnet, phase-piercing shots, shield charges, stronger bombs, hull regeneration, and side-cannon drones.
@@ -56,6 +56,7 @@ Open the deployed game in a modern browser. On compatible browsers, choose **INS
 | Bomb | **B** |
 | Cycle weapon | **Q** |
 | Ship ultimate | **E** or the on-screen ULTIMATE button |
+| Daily challenge | Select **DAILY SEED** from Game Modes; the seed changes at UTC midnight |
 | Pause / resume | **P** or **Esc** |
 | Aim | Move the mouse over the game |
 | Touch | Use the on-screen touch controls |

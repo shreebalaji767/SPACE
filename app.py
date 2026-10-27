@@ -3635,7 +3635,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v5";
+const CACHE = "void-space-v6";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

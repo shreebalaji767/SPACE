@@ -792,6 +792,56 @@ body::before{
   .screen.active .panel{animation:none;}
 }
 
+
+/* LANDING PAGE — cinematic playable preview */
+.landing-screen{align-items:stretch;overflow:auto;padding:0;background:radial-gradient(ellipse at 72% 35%,rgba(87,104,205,.18),transparent 42%),rgba(4,7,18,.76);}
+.landing-shell{width:min(1240px,100%);min-height:100%;margin:auto;padding:clamp(18px,4vw,42px);display:flex;flex-direction:column;gap:clamp(30px,5vw,64px);}
+.landing-nav{display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.landing-brand{display:flex;align-items:center;gap:12px;color:#f3f4ff;font-weight:850;letter-spacing:.2em;font-size:14px;}
+.landing-brand svg{width:38px;height:38px;filter:drop-shadow(0 0 14px rgba(145,217,247,.2));}
+.landing-nav-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.landing-nav-actions button{margin:0;min-height:40px;font-size:11px;}
+.landing-hero{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);align-items:center;gap:clamp(24px,4vw,54px);}
+.landing-copy{text-align:left;position:relative;z-index:2;}
+.landing-kicker{display:inline-flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid rgba(156,232,210,.2);border-radius:99px;background:rgba(156,232,210,.045);color:#b8eadb;font-size:10px;letter-spacing:.17em;font-weight:800;}
+.landing-kicker:before{content:"";width:6px;height:6px;border-radius:50%;background:#9ce8d2;box-shadow:0 0 12px #9ce8d2;}
+.landing-title{font-size:clamp(52px,8.4vw,100px);line-height:.88;letter-spacing:-.065em;font-weight:900;margin:24px 0 18px;color:#f6f5ff;text-shadow:0 0 48px rgba(160,167,255,.14);}
+.landing-title span{display:block;color:#b8b0ff;}
+.landing-description{max-width:430px;color:#aebbd8;font-size:clamp(14px,1.5vw,17px);line-height:1.8;}
+.landing-cta{display:flex;gap:10px;flex-wrap:wrap;margin:25px 0 18px;}
+.landing-cta button{margin:0;min-width:145px;}
+.landing-cta .primary{width:auto;padding-inline:26px;}
+.landing-trust{display:flex;gap:14px;flex-wrap:wrap;color:#8e9bbb;font-size:10px;letter-spacing:.06em;}
+.landing-trust span{display:flex;align-items:center;gap:6px;}
+.landing-trust b{color:#c9d4f2;font-weight:700;}
+.preview-frame{min-width:0;position:relative;border:1px solid rgba(173,190,255,.2);border-radius:22px;overflow:hidden;background:#070b1a;box-shadow:0 26px 80px rgba(0,0,0,.38),0 0 55px rgba(123,135,255,.08);}
+.preview-topbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 15px;background:rgba(17,23,48,.96);border-bottom:1px solid rgba(173,190,255,.13);font-size:9px;letter-spacing:.13em;color:#aab7d7;}
+.preview-lights{display:flex;gap:5px}.preview-lights i{width:6px;height:6px;border-radius:50%;background:#69769e}.preview-lights i:first-child{background:#b5a7ff}
+.preview-live{display:flex;align-items:center;gap:6px;color:#9ce8d2}.preview-live:before{content:"";width:5px;height:5px;background:#9ce8d2;border-radius:50%;box-shadow:0 0 9px #9ce8d2}
+.preview-stage{position:relative;aspect-ratio:1.28;min-height:230px;max-height:430px;background:radial-gradient(ellipse at 50% 52%,#17204a,#080c1d 65%,#050713);}
+#previewCanvas{display:block;width:100%;height:100%;position:absolute;inset:0;}
+.preview-hud{position:absolute;inset:13px;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start;font:9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;color:#dce5ff;text-shadow:0 1px 5px #050713;}
+.preview-chip{padding:8px 9px;border:1px solid rgba(173,190,255,.18);border-radius:8px;background:rgba(7,11,27,.72);line-height:1.9;}
+.preview-chip b{color:#a9dcf8;}
+.preview-boss{position:absolute;bottom:17px;left:15%;width:70%;color:#e4c8ff;font-size:8px;letter-spacing:.2em;text-align:center;}
+.preview-boss-bar{height:5px;margin-top:6px;background:rgba(255,255,255,.1);border-radius:9px;overflow:hidden;}
+.preview-boss-bar span{display:block;width:68%;height:100%;background:linear-gradient(90deg,#9b8eff,#f0a6e5);box-shadow:0 0 12px #b5a7ff;}
+.preview-caption{padding:12px 15px;display:flex;justify-content:space-between;gap:12px;align-items:center;background:rgba(12,17,38,.96);border-top:1px solid rgba(173,190,255,.12);font-size:10px;color:#aab7d7;}
+.preview-caption b{color:#e9eaff;letter-spacing:.06em;}
+.landing-section-head{text-align:center;margin-bottom:20px;}
+.landing-section-head small{color:#b8b0ff;letter-spacing:.22em;font-size:9px;font-weight:800;}
+.landing-section-head h2{margin-top:10px;font-size:clamp(23px,3vw,32px);letter-spacing:-.03em;color:#eff1ff;}
+.landing-section-head p{margin:10px auto 0;max-width:520px;color:#95a3c5;line-height:1.7;font-size:13px;}
+.landing-features{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.landing-feature{padding:19px;border:1px solid rgba(173,190,255,.13);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.012));}
+.landing-feature-icon{font-size:20px;margin-bottom:14px;color:#b9b1ff;}
+.landing-feature h3{font-size:12px;letter-spacing:.04em;color:#e5e9ff;margin-bottom:8px;}
+.landing-feature p{font-size:11px;line-height:1.7;color:#94a3c6;}
+.landing-bottom{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;padding-top:18px;border-top:1px solid rgba(173,190,255,.1);color:#7887a9;font-size:10px;letter-spacing:.08em;}
+.landing-bottom strong{color:#aeb9d9;}
+@media(max-width:850px){.landing-hero{grid-template-columns:1fr;gap:28px}.landing-copy{text-align:center}.landing-description{margin-inline:auto}.landing-cta,.landing-trust{justify-content:center}.landing-title{font-size:clamp(55px,12vw,88px)}.preview-frame{width:min(680px,100%);margin:auto}.landing-features{grid-template-columns:repeat(2,minmax(0,1fr))}.landing-section-head{margin-bottom:16px}}
+@media(max-width:520px){.landing-shell{padding:17px;gap:34px}.landing-nav{align-items:flex-start}.landing-brand{font-size:11px;letter-spacing:.12em}.landing-brand svg{width:31px;height:31px}.landing-nav-actions button{padding:9px 11px;font-size:9px}.landing-title{margin:20px 0 14px}.landing-cta{display:grid;grid-template-columns:1fr;width:min(340px,100%);margin-inline:auto}.landing-cta button{width:100%;}.preview-stage{min-height:215px;aspect-ratio:1.02}.preview-caption{font-size:9px}.landing-features{gap:8px}.landing-feature{padding:14px}.landing-feature h3{font-size:11px}.landing-feature p{font-size:10px}.landing-bottom{justify-content:center;text-align:center}}
+
 </style>
 </head>
 
@@ -833,8 +883,58 @@ body::before{
     </div>
 </div>
 
+
+<!-- CINEMATIC LANDING PAGE -->
+<div class="screen active landing-screen" id="landingScreen">
+  <div class="landing-shell">
+    <header class="landing-nav">
+      <div class="landing-brand">
+        <svg viewBox="0 0 80 80" aria-hidden="true"><defs><linearGradient id="landingShip" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b8f0ff"/><stop offset="1" stop-color="#a69bff"/></linearGradient></defs><rect x="3" y="3" width="74" height="74" rx="20" fill="#0b1230" stroke="#6476bd" stroke-opacity=".6"/><circle cx="40" cy="40" r="27" fill="none" stroke="#6476bd" stroke-dasharray="3 6"/><path d="M57 40 20 23l9 17-9 17z" fill="url(#landingShip)" stroke="#fff" stroke-width="2"/><circle cx="49" cy="40" r="4" fill="#fff"/></svg>
+        <span>VOID SPACE</span>
+      </div>
+      <div class="landing-nav-actions">
+        <button id="landingMenuButton">MAIN MENU</button>
+        <button id="landingHowButton">HOW TO PLAY</button>
+      </div>
+    </header>
+    <main>
+      <section class="landing-hero">
+        <div class="landing-copy">
+          <div class="landing-kicker">FREE TO PLAY · NO ADS · NO PAYWALLS</div>
+          <h1 class="landing-title">OWN THE<span>VOID.</span></h1>
+          <p class="landing-description">A cinematic space roguelite. Pilot a neon starfighter, evolve devastating weapons, survive impossible waves and take down colossal multi-phase bosses.</p>
+          <div class="landing-cta">
+            <button class="primary" id="landingPlayButton">▶ PLAY NOW</button>
+            <button id="landingModesButton">EXPLORE MODES ↗</button>
+          </div>
+          <div class="landing-trust"><span>✦ <b>7 GAME MODES</b></span><span>◈ <b>4 SHIPS</b></span><span>⬡ <b>LOCAL SAVES</b></span></div>
+        </div>
+        <div class="preview-frame" aria-label="Animated gameplay preview">
+          <div class="preview-topbar"><span class="preview-lights"><i></i><i></i><i></i></span><span>LIVE COMBAT FEED // SECTOR 07</span><span class="preview-live">SIMULATION</span></div>
+          <div class="preview-stage">
+            <canvas id="previewCanvas" aria-label="Animated preview showing a starfighter fighting enemies"></canvas>
+            <div class="preview-hud"><div class="preview-chip">SCORE <b id="previewScore">02480</b><br>WAVE <b>08</b><br>WEAPON <b>PHASE RAIL</b></div><div class="preview-chip" style="text-align:right">HULL <b>87%</b><br>ENERGY <b>FULL</b><br>THREAT <b style="color:#f2b9e8">BOSS</b></div></div>
+            <div class="preview-boss">NOVA COLOSSUS<div class="preview-boss-bar"><span></span></div></div>
+          </div>
+          <div class="preview-caption"><b>INCOMING: NOVA COLOSSUS</b><span>PHASE 02 / 03</span></div>
+        </div>
+      </section>
+      <section>
+        <div class="landing-section-head"><small>BUILT FOR THE NEXT RUN</small><h2>One more wave. One more upgrade.</h2><p>Every run changes your build. Every boss demands a new strategy. Your next legendary run starts here.</p></div>
+        <div class="landing-features">
+          <article class="landing-feature"><div class="landing-feature-icon">✧</div><h3>EVOLVING ARSENAL</h3><p>Pulse fire, homing missiles, plasma spreads, railguns and singularity weapons.</p></article>
+          <article class="landing-feature"><div class="landing-feature-icon">◉</div><h3>PHASE-SHIFTING BOSSES</h3><p>Learn attack patterns, survive cinematic phase changes and break their defenses.</p></article>
+          <article class="landing-feature"><div class="landing-feature-icon">⬡</div><h3>MAKE IT YOUR SHIP</h3><p>Unlock ships, upgrade skill trees and trigger powerful signature ultimates.</p></article>
+          <article class="landing-feature"><div class="landing-feature-icon">⌘</div><h3>YOUR RUN. YOUR RULES.</h3><p>Seven modes, three campaign routes, achievements and local save backups.</p></article>
+        </div>
+      </section>
+    </main>
+    <footer class="landing-bottom"><span>VOID SPACE <strong>· A FREE INDIE SPACE ROGUELITE</strong></span><span>NO ADS · NO ACCOUNT · SAVED ON YOUR DEVICE</span></footer>
+  </div>
+</div>
+
 <!-- MAIN MENU -->
-<div class="screen active" id="menuScreen">
+<div class="screen" id="menuScreen">
     <div class="panel">
 
         <svg class="brand-mark" viewBox="0 0 80 80" role="img" aria-label="VOID SPACE logo" xmlns="http://www.w3.org/2000/svg">
@@ -1132,6 +1232,7 @@ resize();
 ========================================================= */
 
 const screens = [
+    "landingScreen",
     "menuScreen",
     "howScreen",
     "settingsScreen",
@@ -3433,6 +3534,47 @@ window.addEventListener("error",(event)=>{
 
 });
 
+
+
+/* LANDING PAGE ACTIONS + SELF-CONTAINED GAMEPLAY PREVIEW */
+document.getElementById("landingPlayButton").addEventListener("click",()=>{currentGameMode="survival";startGame();});
+document.getElementById("landingMenuButton").addEventListener("click",()=>showScreen("menuScreen"));
+document.getElementById("landingHowButton").addEventListener("click",()=>showScreen("howScreen"));
+document.getElementById("landingModesButton").addEventListener("click",()=>showScreen("modeScreen"));
+(function initLandingPreview(){
+  const pc=document.getElementById("previewCanvas");
+  if(!pc)return;
+  const pctx=pc.getContext("2d");
+  let pw=0,ph=0,t=0,previewLast=0;
+  const pstars=Array.from({length:95},()=>({x:Math.random(),y:Math.random(),z:.2+Math.random()*.8,s:.4+Math.random()*1.4}));
+  const pEnemies=Array.from({length:7},(_,i)=>({a:i/7*Math.PI*2,r:105+Math.random()*85,size:9+Math.random()*9,phase:Math.random()*6}));
+  const pShots=Array.from({length:10},(_,i)=>({x:0,y:0,delay:i*.13}));
+  function resizePreview(){const rect=pc.getBoundingClientRect();const dpr=Math.min(window.devicePixelRatio||1,2);pw=Math.max(1,rect.width);ph=Math.max(1,rect.height);pc.width=Math.round(pw*dpr);pc.height=Math.round(ph*dpr);pctx.setTransform(dpr,0,0,dpr,0,0);}
+  function drawPreview(now){
+    if(!document.getElementById("landingScreen").classList.contains("active")){requestAnimationFrame(drawPreview);return;}
+    const dt=Math.min(.04,(now-previewLast)/1000||0);previewLast=now;t+=dt;
+    if(pc.clientWidth!==pw||pc.clientHeight!==ph)resizePreview();
+    pctx.clearRect(0,0,pw,ph);
+    const cx=pw*.5,cy=ph*.48,scale=Math.min(pw/430,ph/300,1.2);
+    const bg=pctx.createRadialGradient(cx,cy,5,cx,cy,Math.max(pw,ph)*.75);bg.addColorStop(0,"#17234a");bg.addColorStop(1,"#050713");pctx.fillStyle=bg;pctx.fillRect(0,0,pw,ph);
+    pctx.strokeStyle="rgba(118,148,220,.09)";pctx.lineWidth=1;
+    for(let x=(t*9)%34;x<pw;x+=34){pctx.beginPath();pctx.moveTo(x,0);pctx.lineTo(x,ph);pctx.stroke();}
+    for(let y=(t*7)%34;y<ph;y+=34){pctx.beginPath();pctx.moveTo(0,y);pctx.lineTo(pw,y);pctx.stroke();}
+    for(const s of pstars){const x=((s.x*pw-t*9*s.z)%pw+pw)%pw,y=((s.y*ph+t*3*s.z)%ph+ph)%ph;pctx.globalAlpha=.22+s.z*.55;pctx.fillStyle="#d5e7ff";pctx.beginPath();pctx.arc(x,y,s.s,0,Math.PI*2);pctx.fill();}pctx.globalAlpha=1;
+    // Distant boss silhouette and animated rotating core.
+    const br=Math.min(pw,ph)*.105;const bx=cx+Math.sin(t*.7)*pw*.09,by=cy-ph*.12+Math.cos(t*.8)*ph*.035;
+    pctx.save();pctx.translate(bx,by);pctx.rotate(-t*.18);pctx.shadowBlur=22;pctx.shadowColor="#ba8cff";pctx.strokeStyle="#d1a4ff";pctx.lineWidth=2;
+    pctx.beginPath();for(let i=0;i<12;i++){const a=i*Math.PI/6,r=br*(i%2?.7:1.15);const x=Math.cos(a)*r,y=Math.sin(a)*r;if(i===0)pctx.moveTo(x,y);else pctx.lineTo(x,y);}pctx.closePath();pctx.fillStyle="rgba(83,53,143,.68)";pctx.fill();pctx.stroke();pctx.beginPath();pctx.arc(0,0,br*.45,0,Math.PI*2);pctx.strokeStyle="#f0b7f1";pctx.stroke();pctx.restore();
+    // Enemy fighters circle the boss and fire streaks across the arena.
+    for(const e of pEnemies){const a=e.a+t*(.28+e.size*.003)+e.phase*.1;const x=cx+Math.cos(a)*e.r*scale,y=cy+Math.sin(a)*e.r*scale*.64;pctx.save();pctx.translate(x,y);pctx.rotate(a+Math.PI/2);pctx.shadowBlur=10;pctx.shadowColor="#ff9bbd";pctx.fillStyle="#f3a9d0";pctx.beginPath();pctx.moveTo(0,-e.size*scale);pctx.lineTo(e.size*.72*scale,e.size*.7*scale);pctx.lineTo(0,e.size*.35*scale);pctx.lineTo(-e.size*.72*scale,e.size*.7*scale);pctx.closePath();pctx.fill();pctx.restore();}
+    for(const shot of pShots){const q=(t*1.2+shot.delay)%1;const sx=cx+Math.sin(t*.8+shot.delay)*pw*.16,sy=ph*.78-q*ph*.66;pctx.save();pctx.globalAlpha=.25+.75*(1-q);pctx.strokeStyle="#9ce8d2";pctx.shadowBlur=9;pctx.shadowColor="#9ce8d2";pctx.lineWidth=2;pctx.beginPath();pctx.moveTo(sx,sy);pctx.lineTo(sx+Math.sin(t+shot.delay)*5,sy-14*scale);pctx.stroke();pctx.restore();}
+    // Player ship.
+    pctx.save();pctx.translate(cx+Math.sin(t*.9)*pw*.07,ph*.76+Math.sin(t*2)*3);pctx.rotate(-Math.PI/2+Math.sin(t*.9)*.15);pctx.shadowBlur=20;pctx.shadowColor="#91d9f7";pctx.fillStyle="#a8e7ff";pctx.beginPath();pctx.moveTo(0,-20*scale);pctx.lineTo(13*scale,13*scale);pctx.lineTo(0,7*scale);pctx.lineTo(-13*scale,13*scale);pctx.closePath();pctx.fill();pctx.fillStyle="#fff";pctx.beginPath();pctx.arc(0,1,3*scale,0,Math.PI*2);pctx.fill();pctx.restore();
+    const score=document.getElementById("previewScore");if(score)score.textContent=String(2480+Math.floor(t*17)).padStart(5,"0");
+    requestAnimationFrame(drawPreview);
+  }
+  window.addEventListener("resize",resizePreview,{passive:true});resizePreview();requestAnimationFrame(drawPreview);
+})();
 
 /* =========================================================
    INITIAL STATE

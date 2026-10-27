@@ -3576,6 +3576,9 @@ window.addEventListener("error",(event)=>{
 
 
 
+/* RECORDED FOOTAGE CAPTURE NOTE: use ?record=1 only in the capture workflow.
+   Normal visitors only watch /static/void-space-gameplay.webm.
+*/
 /* LANDING PAGE ACTIONS + RECORDED GAMEPLAY PREVIEW
    Visitors see a prerecorded capture of the real game. The simulation is only
    started in the dedicated capture mode used by the repository workflow. */

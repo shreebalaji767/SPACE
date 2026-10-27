@@ -22,6 +22,15 @@ A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship th
 - **Performance options:** full/lite visual effects, sound toggle, and screen-shake toggle.
 - **Accessibility basics:** focus-friendly buttons, reduced-motion CSS support, and mobile safe-area handling.
 
+## Save system (no database)
+
+VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed.
+
+- **No database or server-side player account is used.**
+- Saves belong to that browser and site origin; they do not automatically sync between devices or browsers.
+- Clearing site data, private/incognito sessions, or browser storage restrictions can remove or prevent saves. Keep browser storage enabled.
+- A save failure is reported in the browser console rather than being silently treated as successful.
+
 ## Play
 
 Open the deployed game in a modern browser. On compatible browsers, choose **INSTALL VOID SPACE** to install it as an app.

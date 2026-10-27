@@ -1,11 +1,12 @@
 # VOID SPACE 🚀
 
-A free, browser-based neon cyberpunk space-survival arcade game. Pilot a ship through escalating enemy waves, fight bosses, collect power-ups, build a run with upgrades, earn credits, and unlock ships.
+A free, browser-based neon cyberpunk space-survival arcade game with a cinematic landing page and animated gameplay preview. Pilot a ship through escalating enemy waves, fight bosses, collect power-ups, build a run with upgrades, earn credits, and unlock ships.
 
 **No paid items, no ads, no external game assets, and no database required.** Player progression is stored locally in the browser.
 
 ## Features
 
+- **Cinematic landing page:** responsive hero screen, animated in-page combat preview, clear Play Now / Game Modes actions, and feature highlights. The preview is a lightweight canvas simulation and does not start a real run until Play Now is selected.
 - **Arcade combat:** fast fighters, tanks, ranged snipers, enemy projectiles, escalating waves, and three named boss variants.
 - **Multi-phase bosses:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health, with phase-transition slow motion, flashes, unique colors, and a live boss bar.
 - **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.

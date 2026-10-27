@@ -70,7 +70,7 @@ jobs:
                   # Validate the actual recording route before accepting the footage:
                   # the HUD must show a live boss and at least one regular hostile.
                   await page.wait_for_timeout(1500)
-                  threat = (await page.locator("#previewThreat").inner_text()).strip()
+                  threat = (await page.locator(".preview-threat").inner_text()).strip()
                   if not threat.startswith("BOSS + ") or not threat.endswith(" HOSTILES"):
                       raise RuntimeError(f"Trailer must show a boss and enemy wave together; HUD was: {threat!r}")
                   count = int(threat.removeprefix("BOSS + ").removesuffix(" HOSTILES"))

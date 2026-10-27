@@ -1442,6 +1442,7 @@ function useBomb(){
     player.bombCooldown = 8;
 
     const radius=Math.min(Math.max(W,H)*.62,520);bombSlow=1.15;bombFx={x:player.x,y:player.y,r:12,max:radius,life:.95};const flash=document.getElementById("bombFlash");flash.style.transition="none";flash.style.opacity=".95";requestAnimationFrame(()=>{flash.style.transition="opacity .9s ease-out";flash.style.opacity="0"});
+    for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(b.enemyBullet&&Math.hypot(b.x-player.x,b.y-player.y)<radius)bullets.splice(i,1);}
 
     for(const enemy of enemies){
 

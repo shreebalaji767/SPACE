@@ -1012,7 +1012,7 @@ body::before{
 <div class="screen" id="skillTreeScreen"><div class="panel"><h1>SHIP SKILL TREE</h1><p style="color:#9dcaff;margin:12px">Permanent upgrades for the currently selected ship. Ranks are saved on this device.</p><div class="neon-stats"><span>◈ CREDITS <b id="skillCoins">0</b></span><span>SHIP <b id="skillShipName">NEON STRIKER</b></span></div><div id="skillTreeCards"></div><button id="skillTreeBackButton">BACK TO HANGAR</button></div></div>
 <div class="screen" id="missionScreen"><div class="panel"><h1>MISSIONS & RECORDS</h1><div id="missionContent" style="line-height:2;color:#c7d9ff;margin:20px 0"></div><button id="missionBackButton">BACK</button></div></div>
 <div class="screen" id="modeScreen"><div class="panel"><h1>SELECT GAME MODE</h1><p style="color:#9dcaff;margin:10px">Choose your challenge. All modes are free.</p><div class="feature-grid">
-<button data-mode="survival">SURVIVAL <small>Classic escalating waves</small></button><button data-mode="endless">ENDLESS <small>Push your highest wave</small></button><button data-mode="bossrush">BOSS RUSH <small>Boss encounters every wave</small></button><button data-mode="timeattack">TIME ATTACK <small>Three minutes to score</small></button><button data-mode="hardcore">HARDCORE <small>One life, no second chances</small></button><button id="campaignOpenButton">CAMPAIGN <small>Clear three sectors and their bosses</small></button>
+<button data-mode="survival">SURVIVAL <small>Classic escalating waves</small></button><button data-mode="endless">ENDLESS <small>Faster escalating waves</small></button><button data-mode="bossrush">BOSS RUSH <small>Boss encounters every wave</small></button><button data-mode="timeattack">TIME ATTACK <small>Three minutes to score</small></button><button data-mode="hardcore">HARDCORE <small>One life, tougher enemies</small></button><button data-mode="daily">DAILY SEED <small>Same seeded challenge each day</small></button><button id="campaignOpenButton">CAMPAIGN <small>Clear three sectors and their bosses</small></button>
 </div><button id="modeBackButton">BACK</button></div></div>
 <div class="screen" id="campaignScreen"><div class="panel"><h1>SECTOR CAMPAIGN</h1><p style="color:#9dcaff;margin:10px">Choose a route. Clear wave 8 and survive the sector.</p><div class="feature-grid"><button data-route="derelict">DERELICT BELT <small>Asteroids and wreckage</small></button><button data-route="ionstorm">ION STORM <small>Charged debris field</small></button><button data-route="singularity">SINGULARITY EDGE <small>Dark matter hazards</small></button></div><button id="campaignBackButton">BACK TO MODES</button></div></div>
 <div class="screen" id="achievementsScreen"><div class="panel"><h1>ACHIEVEMENTS</h1><p style="color:#9dcaff;margin:10px">Earn badges through play. Progress is stored locally.</p><div id="achievementCards"></div><button id="achievementsBackButton">BACK</button></div></div>
@@ -1315,10 +1315,10 @@ function createStars(){
     for(let i=0;i<count;i++){
 
         stars.push({
-            x:Math.random()*W,
-            y:Math.random()*H,
-            z:.2 + Math.random()*.8,
-            size:.5 + Math.random()*2
+            x:gameRandom()*W,
+            y:gameRandom()*H,
+            z:.2 + gameRandom()*.8,
+            size:.5 + gameRandom()*2
         });
 
     }
@@ -1331,7 +1331,7 @@ function createStars(){
 
 function resetGame(){
 
-    score=0;wave=1;kills=0;runCoins=0;runXP=0;runTime=0;runEndedByVictory=false;runWeaponIndex=0;weaponLevel=0;hazardTimer=4;asteroids=[];cinematicSlow=0;screenFlash=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
+    score=0;wave=1;kills=0;runCoins=0;runXP=0;runTime=0;runEndedByVictory=false;runWeaponIndex=0;weaponLevel=0;dailyRngState=seedFromDate();hazardTimer=4;asteroids=[];cinematicSlow=0;screenFlash=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
 
     waveTimer = 0;
     enemySpawnTimer = 0;
@@ -1779,7 +1779,7 @@ function shoot(){
 
     const weapon=weaponDefs[runWeaponIndex].id,speed=weaponDefs[runWeaponIndex].speed||720,evolved=voidWeaponEvolution();
     const baseCount=runUpgrades.critical>=4?3:(runUpgrades.critical>=2?2:1),shotCount=baseCount+(evolved==="STARSTORM"?2:0);
-    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(Math.random()<Math.min(.35,runUpgrades.critical*.05)?2:1)*(evolved==="PLASMA SWARM"?1.35:1)*(1+weaponLevel*.12);
+    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(gameRandom()<Math.min(.35,runUpgrades.critical*.05)?2:1)*(evolved==="PLASMA SWARM"?1.35:1)*(1+weaponLevel*.12);
     const angles=weapon==="shotgun"?Array.from({length:5},(_,i)=>player.angle+(i-2)*.22):Array.from({length:shotCount},(_,i)=>player.angle+(i-(shotCount-1)/2)*.12);
     for(const angle of angles){const missile=weapon==="missile",rail=weapon==="railgun",chain=weapon==="chain",blackhole=weapon==="blackhole";bullets.push({damage:shotDamage*(weapon==="shotgun"?.55:missile?1.5:rail?1.8:1),x:player.x+Math.cos(angle)*20,y:player.y+Math.sin(angle)*20,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:missile?2.2:1.1,radius:missile?5:rail?4:3,pierce:runUpgrades.pierce+(evolved==="PHASE LANCE"?2:0)+(rail?99:0),homing:missile,chain:chain?3:0,splash:blackhole?100:0,blackhole,color:weaponDefs[runWeaponIndex].color});}
     for(let d=0;d<Math.min(3,runUpgrades.drone);d++){const side=d%2===0?-1:1,angle=player.angle+side*.32;bullets.push({damage:shotDamage*.65,x:player.x+Math.cos(angle)*18,y:player.y+Math.sin(angle)*18,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:1.1,radius:3,pierce:runUpgrades.pierce,color:"#8be2ff"});}
@@ -1857,26 +1857,26 @@ function useBomb(){
 function spawnEnemy(){
 
     const side =
-        Math.floor(Math.random()*4);
+        Math.floor(gameRandom()*4);
 
     let x;
     let y;
 
     if(side === 0){
         x = -50;
-        y = Math.random()*H;
+        y = gameRandom()*H;
     }else if(side === 1){
         x = W+50;
-        y = Math.random()*H;
+        y = gameRandom()*H;
     }else if(side === 2){
-        x = Math.random()*W;
+        x = gameRandom()*W;
         y = -50;
     }else{
-        x = Math.random()*W;
+        x = gameRandom()*W;
         y = H+50;
     }
 
-    const roll=Math.random();
+    const roll=gameRandom();
     let type="fighter";
 
     if(roll<.10&&wave>=4)type="sniper";else if(roll<.22&&wave>=3)type="tank";else if(roll<.42&&wave>=2)type="fast";
@@ -1983,13 +1983,13 @@ function spawnPowerup(){
 
     powerups.push({
 
-        x:60+Math.random()*(W-120),
-        y:60+Math.random()*(H-120),
+        x:60+gameRandom()*(W-120),
+        y:60+gameRandom()*(H-120),
 
         radius:13,
 
         type:
-            types[Math.floor(Math.random()*types.length)],
+            types[Math.floor(gameRandom()*types.length)],
 
         life:12
 
@@ -2055,10 +2055,10 @@ function createBurst(x,y,count,power,color){
     for(let i=0;i<count;i++){
 
         const a =
-            Math.random()*Math.PI*2;
+            gameRandom()*Math.PI*2;
 
         const speed =
-            Math.random()*power;
+            gameRandom()*power;
 
         particles.push({
 
@@ -2068,11 +2068,11 @@ function createBurst(x,y,count,power,color){
             vx:Math.cos(a)*speed*60,
             vy:Math.sin(a)*speed*60,
 
-            life:.3+Math.random()*.6,
+            life:.3+gameRandom()*.6,
 
             maxLife:.9,
 
-            size:1+Math.random()*3,
+            size:1+gameRandom()*3,
             color:color||"#8edcff"
 
         });
@@ -2347,7 +2347,7 @@ function updateBullets(dt){
         b.x += b.vx*dt;
         b.y += b.vy*dt;
 
-        if(!b.enemyBullet&&asteroids.length){let consumed=false;for(let j=asteroids.length-1;j>=0;j--){const rock=asteroids[j];if(distance(b,rock)<rock.radius+b.radius){rock.health-=b.damage||25;b.life=0;consumed=true;createBurst(b.x,b.y,5,2,b.color||"#9bb6d5");if(rock.health<=0){createBurst(rock.x,rock.y,22,5,"#ffc68b");if(Math.random()<.16)powerups.push({x:rock.x,y:rock.y,radius:13,type:"coins",life:12});asteroids.splice(j,1);}break;}}if(consumed){bullets.splice(i,1);continue;}}
+        if(!b.enemyBullet&&asteroids.length){let consumed=false;for(let j=asteroids.length-1;j>=0;j--){const rock=asteroids[j];if(distance(b,rock)<rock.radius+b.radius){rock.health-=b.damage||25;b.life=0;consumed=true;createBurst(b.x,b.y,5,2,b.color||"#9bb6d5");if(rock.health<=0){createBurst(rock.x,rock.y,22,5,"#ffc68b");if(gameRandom()<.16)powerups.push({x:rock.x,y:rock.y,radius:13,type:"coins",life:12});asteroids.splice(j,1);}break;}}if(consumed){bullets.splice(i,1);continue;}}
         b.life -= dt;
 
         if(
@@ -2473,7 +2473,7 @@ function updateEnemies(dt){
                     spawnPowerup();
                 }
 
-            }else if(Math.random() < .12){
+            }else if(gameRandom() < .12){
 
                 powerups.push({
 
@@ -2487,7 +2487,7 @@ function updateEnemies(dt){
                         "energy",
                         "rapid",
                         "bomb"
-                    ][Math.floor(Math.random()*4)],
+                    ][Math.floor(gameRandom()*4)],
 
                     life:12
                 });
@@ -2663,7 +2663,7 @@ function updateWave(dt){
     */
 
     if(
-        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:currentGameMode==="endless"?14:18) &&
+        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:currentGameMode==="endless"?14:currentGameMode==="daily"?16:18) &&
         enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5) &&
         !enemies.some(e=>e.boss)
     ){
@@ -2686,7 +2686,7 @@ function updateWave(dt){
 
     enemySpawnTimer -= dt;
     hazardTimer-=dt;
-    if(hazardTimer<=0&&asteroids.length<7){spawnAsteroid();hazardTimer=7+Math.random()*5;}
+    if(hazardTimer<=0&&asteroids.length<7){spawnAsteroid();hazardTimer=7+gameRandom()*5;}
 
     const enemyCount =
         enemies.filter(e=>!e.boss).length;
@@ -2716,7 +2716,7 @@ function updateWave(dt){
     if(powerTimer <= 0){
 
         powerTimer =
-            10+Math.random()*8;
+            10+gameRandom()*8;
 
         if(powerups.length < 3){
             spawnPowerup();
@@ -2738,7 +2738,7 @@ function updateStars(dt){
 
         if(s.y > H){
             s.y = 0;
-            s.x = Math.random()*W;
+            s.x = gameRandom()*W;
         }
     }
 }
@@ -2777,7 +2777,7 @@ function update(dt){
 
 function drawBackground(){
 
-    ctx.save();if(window.voidShakeEnabled!==false&&bombSlow>0)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*12);
+    ctx.save();if(window.voidShakeEnabled!==false&&bombSlow>0)ctx.translate((gameRandom()-.5)*12,(gameRandom()-.5)*12);
     ctx.fillStyle="#02030a";ctx.fillRect(0,0,W,H);if(window.voidFxEnabled!==false){const neb=ctx.createRadialGradient(W*.72,H*.28,0,W*.72,H*.28,Math.max(W,H)*.72);neb.addColorStop(0,"rgba(105,30,160,.18)");neb.addColorStop(.5,"rgba(15,70,130,.07)");neb.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=neb;ctx.fillRect(0,0,W,H);}
 
     /*
@@ -2900,7 +2900,7 @@ function drawPlayer(){
 
     ctx.moveTo(-15,-6);
     ctx.lineTo(
-        -29-Math.random()*7,
+        -29-gameRandom()*7,
         0
     );
     ctx.lineTo(-15,6);
@@ -3288,8 +3288,11 @@ requestAnimationFrame(gameLoop);
 
 /* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
-let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVictory=false,runWeaponIndex=0,weaponLevel=0,asteroids=[],hazardTimer=5,cinematicSlow=0,screenFlash=0,toastTimer=0,toastMessage="",toastColor="#8be2ff";
+let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVictory=false,runWeaponIndex=0,weaponLevel=0,asteroids=[],hazardTimer=5,cinematicSlow=0,screenFlash=0,toastTimer=0,toastMessage="",toastColor="#8be2ff",dailyRngState=1;
 let unlockedAchievements=[],lifetimeKills=0,bossesDefeated=0,campaignWins=0,campaignProgress={},modeRecords={};
+function seedFromDate(){const day=new Date().toISOString().slice(0,10);let h=2166136261;for(let i=0;i<day.length;i++){h^=day.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0||1;}
+function gameRandom(){if(currentGameMode!=="daily")return Math.random();dailyRngState=(dailyRngState+0x6D2B79F5)|0;let t=dailyRngState;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;}
+
 let selectedShip="striker",ownedShips=["striker"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
 const weaponDefs=[
@@ -3320,7 +3323,7 @@ const runUpgradeDefs=[
 ["regen","NANITE REPAIR","Regenerate hull slowly over time."],
 ["drone","WINGMAN DRONE","Add a side cannon to each volley."]
 ];
-function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>Math.random()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
+function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>gameRandom()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
 function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
 function renderVoidMissions(){document.getElementById("missionContent").innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p><p>PERMANENT SKILL RANKS: "+Object.values(shipSkills).reduce((n,s)=>n+Object.values(s).reduce((a,v)=>a+v,0),0)+"</p>";}
 const voidSkillDefs=[
@@ -3368,6 +3371,7 @@ const achievementDefs=[
  {id:"ship_collector",name:"FLEET COMMANDER",desc:"Unlock every ship.",test:()=>ownedShips.length>=Object.keys(ships).length},
  {id:"campaign_clear",name:"SECTOR SAVIOR",desc:"Clear a campaign sector.",test:()=>campaignWins>=1},
  {id:"hardcore_120",name:"IRON PILOT",desc:"Survive two minutes in Hardcore.",test:()=>currentGameMode==="hardcore"&&runTime>=120},
+ {id:"daily_five",name:"DAILY REGULAR",desc:"Reach wave 5 in a daily seeded challenge.",test:()=>currentGameMode==="daily"&&wave>=5},
  {id:"time_attack",name:"AGAINST THE CLOCK",desc:"Complete a Time Attack run.",test:()=>currentGameMode==="timeattack"&&runTime>=180}
 ];
 function toastNotice(message,color="#8be2ff"){toastMessage=message;toastColor=color;toastTimer=2.8;}
@@ -3383,9 +3387,9 @@ function renderSaveTools(){const el=document.getElementById("saveStatus");if(el)
 function exportVoidSave(){saveVoidProfile();const raw=localStorage.getItem("voidSpaceProfile");if(!raw){toastNotice("SAVE EXPORT FAILED","#ff8b9b");return;}const blob=new Blob([raw],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="void-space-save-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);toastNotice("SAVE BACKUP EXPORTED");}
 function importVoidSave(event){const file=event.target.files&&event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(String(reader.result||""));if(!p||typeof p!=="object"||(!("coins" in p)&&!("owned" in p)&&!("ship" in p)))throw new Error("This is not a VOID SPACE profile.");localStorage.setItem("voidSpaceProfile",JSON.stringify(p));toastNotice("SAVE RESTORED — RELOADING");setTimeout(()=>location.reload(),500);}catch(err){const status=document.getElementById("saveStatus");if(status)status.textContent="Import failed: "+err.message;}};reader.onerror=()=>{const status=document.getElementById("saveStatus");if(status)status.textContent="Could not read the selected file.";};reader.readAsText(file);event.target.value="";}
 function spawnAsteroid(){
- const side=Math.floor(Math.random()*4);let x=side===0?-35:side===1?W+35:Math.random()*W,y=side===2?-35:side===3?H+35:Math.random()*H;
- const a=Math.atan2(H/2-y,W/2-x)+(Math.random()-.5)*1.4,speed=25+Math.random()*55,radius=16+Math.random()*22;
- asteroids.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,radius,health:radius*2.2,maxHealth:radius*2.2,rotation:Math.random()*Math.PI*2,spin:(Math.random()-.5)*1.5,contactCooldown:0,type:currentRoute});
+ const side=Math.floor(gameRandom()*4);let x=side===0?-35:side===1?W+35:gameRandom()*W,y=side===2?-35:side===3?H+35:gameRandom()*H;
+ const a=Math.atan2(H/2-y,W/2-x)+(gameRandom()-.5)*1.4,speed=25+gameRandom()*55,radius=16+gameRandom()*22;
+ asteroids.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,radius,health:radius*2.2,maxHealth:radius*2.2,rotation:gameRandom()*Math.PI*2,spin:(gameRandom()-.5)*1.5,contactCooldown:0,type:currentRoute});
 }
 function updateHazards(dt){
  for(let i=asteroids.length-1;i>=0;i--){const rock=asteroids[i];rock.x+=rock.vx*dt;rock.y+=rock.vy*dt;rock.rotation+=rock.spin*dt;rock.contactCooldown=Math.max(0,rock.contactCooldown-dt);

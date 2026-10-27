@@ -2664,7 +2664,7 @@ function updateWave(dt){
     if(
         waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:18) &&
         enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5) &&
-        (currentGameMode!=="bossrush"||!enemies.some(e=>e.boss))
+        !enemies.some(e=>e.boss)
     ){
 
         waveTimer = 0;
@@ -2679,7 +2679,7 @@ function updateWave(dt){
 
         sound(220,.3,"square",.03);
 
-        if(currentGameMode==="bossrush"||wave%5===0)spawnBoss();
+        if(currentGameMode==="bossrush"||wave%5===0||(currentGameMode==="campaign"&&wave===8))spawnBoss();
         if(wave%3===0)offerVoidUpgrades();
     }
 
@@ -2969,7 +2969,7 @@ function drawEnemy(enemy){
     ctx.shadowColor =
         enemy.boss ? "#c040ff" : "#ff4f6d";
 
-    ctx.fillStyle=enemy.boss?"#a23dff":enemy.type==="sniper"?"#ffb347":enemy.type==="tank"?"#8e2938":enemy.type==="fast"?"#e54a61":"#bd354f";
+    ctx.fillStyle=enemy.boss?(enemy.bossColor||"#a23dff"):enemy.type==="sniper"?"#ffb347":enemy.type==="tank"?"#8e2938":enemy.type==="fast"?"#e54a61":"#bd354f";
 
     ctx.beginPath();
 

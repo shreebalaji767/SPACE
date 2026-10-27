@@ -2966,7 +2966,8 @@ window.addEventListener("error",(event)=>{
    INITIAL STATE
 ========================================================= */
 
-loadVoidProfile();createStars();updateHUD();paintMeta();\nfor(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}
+loadVoidProfile();createStars();updateHUD();paintMeta();
+for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}
 
 </script>
 

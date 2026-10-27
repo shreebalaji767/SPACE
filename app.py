@@ -977,7 +977,7 @@ function createStars(){
 
 function resetGame(){
 
-    score=0;wave=1;kills=0;runCoins=0;runXP=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0};
+    score=0;wave=1;kills=0;runCoins=0;runXP=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0};
 
     waveTimer = 0;
     enemySpawnTimer = 0;
@@ -1104,9 +1104,9 @@ document.getElementById("howButton")
 
 document.getElementById("settingsButton").addEventListener("click",()=>showScreen("settingsScreen"));
 window.voidSoundEnabled=true;window.voidShakeEnabled=true;window.voidFxEnabled=true;
-document.getElementById("soundToggle")?.addEventListener("click",e=>{window.voidSoundEnabled=!(window.voidSoundEnabled!==false);e.currentTarget.textContent=window.voidSoundEnabled?"ON":"OFF";});
-document.getElementById("shakeToggle")?.addEventListener("click",e=>{window.voidShakeEnabled=!(window.voidShakeEnabled!==false);e.currentTarget.textContent=window.voidShakeEnabled?"ON":"OFF";});
-document.getElementById("fxToggle")?.addEventListener("click",e=>{window.voidFxEnabled=!(window.voidFxEnabled!==false);e.currentTarget.textContent=window.voidFxEnabled?"FULL":"LITE";});
+document.getElementById("soundToggle")?.addEventListener("click",e=>{window.voidSoundEnabled=!(window.voidSoundEnabled!==false);e.currentTarget.textContent=window.voidSoundEnabled?"ON":"OFF";saveVoidProfile();});
+document.getElementById("shakeToggle")?.addEventListener("click",e=>{window.voidShakeEnabled=!(window.voidShakeEnabled!==false);e.currentTarget.textContent=window.voidShakeEnabled?"ON":"OFF";saveVoidProfile();});
+document.getElementById("fxToggle")?.addEventListener("click",e=>{window.voidFxEnabled=!(window.voidFxEnabled!==false);e.currentTarget.textContent=window.voidFxEnabled?"FULL":"LITE";saveVoidProfile();});
 document.getElementById("hangarButton").addEventListener("click",()=>{renderVoidHangar();showScreen("hangarScreen")});
 document.getElementById("missionsButton").addEventListener("click",()=>{renderVoidMissions();showScreen("missionScreen")});
 document.getElementById("hangarBackButton").addEventListener("click",()=>showScreen("menuScreen"));
@@ -2250,7 +2250,7 @@ function updatePowerups(dt){
         p.life -= dt;
 
         if(distance(p,player) <
-           p.radius+player.radius){
+           p.radius+player.radius+runUpgrades.magnet*35){
 
             collectPowerup(p);
 
@@ -2920,8 +2920,8 @@ requestAnimationFrame(gameLoop);
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
 let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
-function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=p.ship||"striker";ownedShips=p.owned||["striker"];bestScore=p.best||0;bestWave=p.wave||1;}catch(e){}}
-function saveVoidProfile(){try{localStorage.setItem("voidSpaceProfile",JSON.stringify({coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,best:bestScore,wave:bestWave}));}catch(e){}}
+function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";bestScore=p.best||0;bestWave=p.wave||1;window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){}}
+function saveVoidProfile(){try{localStorage.setItem("voidSpaceProfile",JSON.stringify({coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,best:bestScore,wave:bestWave,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false}));}catch(e){}}
 function paintMeta(){const vals={metaCoins:bankCoins,metaLevel:pilotLevel,metaBest:bestScore.toLocaleString()};for(const id in vals){const el=document.getElementById(id);if(el)el.textContent=vals[id];}}
 function awardVoidXP(n){runXP+=n;xpProgress+=n;while(xpProgress>=xpNext){xpProgress-=xpNext;pilotLevel++;xpNext=Math.round(xpNext*1.2);offerVoidUpgrades();}saveVoidProfile();paintMeta();}
 function awardVoidCoins(n){runCoins+=n;bankCoins+=n;saveVoidProfile();paintMeta();}
@@ -2930,7 +2930,7 @@ const runUpgradeDefs=[
 ["fire","RAPID-FIRE COILS","Shoot faster."],
 ["engine","ION AFTERBURNER","+8% thrust and mobility."],
 ["hull","REINFORCED HULL","+20 maximum health and heal 20."],
-["critical","PRISM MULTI-SHOT","More critical damage; extra shots at higher stacks."]
+["critical","PRISM MULTI-SHOT","More critical damage; extra shots at higher stacks."],\n["magnet","SALVAGE MAGNET","Pull nearby power-ups from farther away."]
 ];
 function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>Math.random()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}paused=false;hideScreens();};host.appendChild(b);});}
 function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
@@ -2962,7 +2962,7 @@ window.addEventListener("error",(event)=>{
    INITIAL STATE
 ========================================================= */
 
-loadVoidProfile();createStars();updateHUD();paintMeta();
+loadVoidProfile();createStars();updateHUD();paintMeta();\nfor(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}
 
 </script>
 

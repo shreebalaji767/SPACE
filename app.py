@@ -1303,7 +1303,7 @@ function createStars(){
 
 function resetGame(){
 
-    score=0;wave=1;kills=0;runCoins=0;runXP=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0};
+    score=0;wave=1;kills=0;runCoins=0;runXP=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
 
     waveTimer = 0;
     enemySpawnTimer = 0;
@@ -1736,7 +1736,8 @@ function shoot(){
             vx:Math.cos(angle)*speed+player.vx*.2,
             vy:Math.sin(angle)*speed+player.vy*.2,
             life:1.1,
-            radius:3
+            radius:3,
+            pierce:runUpgrades.pierce
         });
     }
 
@@ -1779,7 +1780,7 @@ function useBomb(){
 
         if(d < radius){
 
-            enemy.health-=(90+runUpgrades.damage*22)*(player.shipDamage||1);
+            enemy.health-=(90+runUpgrades.damage*22+runUpgrades.bomb*28)*(player.shipDamage||1);
 
             createBurst(
                 enemy.x,
@@ -2410,6 +2411,7 @@ function updateEnemies(dt){
 
                 sound(70,.18,"sawtooth",.04);
 
+                if(runUpgrades.shield>0){runUpgrades.shield--;player.health=Math.min(player.maxHealth,player.health+0);createBurst(player.x,player.y,14,3);}
                 if(!enemy.boss){
                     enemy.health = 0;
                 }
@@ -2504,7 +2506,7 @@ function bulletCollisions(){
 
                 if(player.invincible <= 0){
 
-                    player.health -= 12;
+                    if(runUpgrades.shield>0){runUpgrades.shield--;createBurst(player.x,player.y,12,3);}else{player.health -= 12;}
 
                     player.invincible = .25;
 
@@ -2554,7 +2556,7 @@ function bulletCollisions(){
                 );
 
                 hit = true;
-
+                if(bullet.pierce>0){bullet.pierce--;continue;}
                 break;
             }
         }
@@ -3247,7 +3249,7 @@ requestAnimationFrame(gameLoop);
 
 /* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
-let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0},installPrompt=null,bombFx=null,bombSlow=0;
+let selectedShip="striker",ownedShips=["striker"],runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
 function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";bestScore=p.best||0;bestWave=p.wave||1;window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){}}
 function saveVoidProfile(){try{const profile={version:1,savedAt:Date.now(),coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,best:bestScore,wave:bestWave,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
@@ -3262,9 +3264,14 @@ const runUpgradeDefs=[
 ["engine","ION AFTERBURNER","+8% thrust and mobility."],
 ["hull","REINFORCED HULL","+20 maximum health and heal 20."],
 ["critical","PRISM MULTI-SHOT","More critical damage; extra shots at higher stacks."],
-["magnet","SALVAGE MAGNET","Pull nearby power-ups from farther away."]
+["magnet","SALVAGE MAGNET","Pull nearby power-ups from farther away."],
+["pierce","PHASE-PIERCER","Shots pass through +1 extra enemy per stack."],
+["shield","AEGIS CHARGE","Block one hit per stack."],
+["bomb","NOVA AMPLIFIER","Bombs deal +28 bonus damage per stack."],
+["regen","NANITE REPAIR","Regenerate hull slowly over time."],
+["drone","WINGMAN DRONE","Add a side cannon to each volley."]
 ];
-function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>Math.random()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}paused=false;hideScreens();};host.appendChild(b);});}
+function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>Math.random()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
 function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
 function renderVoidMissions(){document.getElementById("missionContent").innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p>";}
 

@@ -3311,6 +3311,14 @@ let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVicto
 let unlockedAchievements=[],lifetimeKills=0,bossesDefeated=0,campaignWins=0,campaignProgress={},modeRecords={};
 let selectedShip="striker",ownedShips=["striker"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
+const weaponDefs=[
+ {id:"pulse",name:"PULSE",color:"#e8f7ff",speed:720,desc:"Reliable energy bolts"},
+ {id:"missile",name:"HOMING MISSILES",color:"#ffbf78",speed:390,desc:"Steer toward the nearest target"},
+ {id:"shotgun",name:"PLASMA SHOTGUN",color:"#ff8be8",speed:650,desc:"Five-shot spread at close range"},
+ {id:"railgun",name:"PHASE RAILGUN",color:"#9fffe5",speed:980,desc:"Heavy shots pierce enemy lines"},
+ {id:"chain",name:"CHAIN LIGHTNING",color:"#72f7ff",speed:760,desc:"Arcs damage between nearby foes"},
+ {id:"blackhole",name:"SINGULARITY",color:"#c29bff",speed:470,desc:"Impact pulls and damages nearby enemies"}
+];
 function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";shipSkills=p.shipSkills&&typeof p.shipSkills==="object"?p.shipSkills:{};for(const id of Object.keys(ships)){if(!shipSkills[id]||typeof shipSkills[id]!=="object")shipSkills[id]={};for(const k of ["hull","thrusters","reactor","weapon"])shipSkills[id][k]=Math.max(0,Math.min(5,Number(shipSkills[id][k])||0));}bestScore=p.best||0;bestWave=p.wave||1;unlockedAchievements=Array.isArray(p.achievements)?p.achievements:[];lifetimeKills=Number(p.lifetimeKills)||0;bossesDefeated=Number(p.bossesDefeated)||0;campaignWins=Number(p.campaignWins)||0;campaignProgress=p.campaignProgress&&typeof p.campaignProgress==="object"?p.campaignProgress:{};modeRecords=p.modeRecords&&typeof p.modeRecords==="object"?p.modeRecords:{};window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){shipSkills={};unlockedAchievements=[];for(const id of Object.keys(ships))shipSkills[id]={hull:0,thrusters:0,reactor:0,weapon:0};}}
 function saveVoidProfile(){try{const profile={version:3,savedAt:Date.now(),coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,shipSkills,best:bestScore,wave:bestWave,achievements:unlockedAchievements,lifetimeKills,bossesDefeated,campaignWins,campaignProgress,modeRecords,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
 window.addEventListener("pagehide",saveVoidProfile);
@@ -3366,6 +3374,56 @@ function voidWeaponEvolution(){
  if(runUpgrades.damage>=4&&runUpgrades.drone>=2)return "PLASMA SWARM";
  return "";
 }
+
+const achievementDefs=[
+ {id:"first_blood",name:"FIRST BLOOD",desc:"Destroy your first enemy.",test:()=>lifetimeKills>=1},
+ {id:"centurion",name:"CENTURION",desc:"Destroy 100 enemies across all runs.",test:()=>lifetimeKills>=100},
+ {id:"cosmic_reaper",name:"COSMIC REAPER",desc:"Destroy 500 enemies across all runs.",test:()=>lifetimeKills>=500},
+ {id:"boss_breaker",name:"BOSS BREAKER",desc:"Defeat your first boss.",test:()=>bossesDefeated>=1},
+ {id:"boss_hunter",name:"BOSS HUNTER",desc:"Defeat five bosses.",test:()=>bossesDefeated>=5},
+ {id:"wave_ten",name:"TENACIOUS",desc:"Reach wave 10 in any run.",test:()=>bestWave>=10||wave>=10},
+ {id:"score_50k",name:"HIGH SCORER",desc:"Score 50,000 points in a run.",test:()=>score>=50000},
+ {id:"evolution",name:"EVOLVED",desc:"Unlock a weapon evolution during a run.",test:()=>!!voidWeaponEvolution()},
+ {id:"ship_collector",name:"FLEET COMMANDER",desc:"Unlock every ship.",test:()=>ownedShips.length>=Object.keys(ships).length},
+ {id:"campaign_clear",name:"SECTOR SAVIOR",desc:"Clear a campaign sector.",test:()=>campaignWins>=1},
+ {id:"hardcore_120",name:"IRON PILOT",desc:"Survive two minutes in Hardcore.",test:()=>currentGameMode==="hardcore"&&runTime>=120},
+ {id:"time_attack",name:"AGAINST THE CLOCK",desc:"Complete a Time Attack run.",test:()=>currentGameMode==="timeattack"&&runEndedByVictory}
+];
+function toastNotice(message,color="#8be2ff"){toastMessage=message;toastColor=color;toastTimer=2.8;}
+function checkVoidAchievements(){
+ if(!Array.isArray(unlockedAchievements))unlockedAchievements=[];
+ for(const def of achievementDefs){if(!unlockedAchievements.includes(def.id)&&def.test()){unlockedAchievements.push(def.id);toastNotice("ACHIEVEMENT UNLOCKED: "+def.name,"#ffe59b");saveVoidProfile();}}
+}
+function renderVoidAchievements(){
+ const host=document.getElementById("achievementCards");if(!host)return;host.innerHTML="";
+ for(const def of achievementDefs){const unlocked=unlockedAchievements.includes(def.id),card=document.createElement("div");card.className="achievement-card"+(unlocked?"":" locked");const icon=document.createElement("div");icon.textContent=unlocked?"✦":"◇";icon.style.fontSize="24px";icon.style.color=unlocked?"#ffe59b":"#7784a8";const copy=document.createElement("div"),title=document.createElement("strong"),desc=document.createElement("small");title.textContent=def.name+(unlocked?" • UNLOCKED":" • LOCKED");desc.textContent=def.desc;copy.append(title,desc);card.append(icon,copy);host.appendChild(card);}
+}
+function renderSaveTools(){const el=document.getElementById("saveStatus");if(el)el.textContent="Local profile ready • "+unlockedAchievements.length+"/"+achievementDefs.length+" achievements • "+bankCoins+" credits";}
+function exportVoidSave(){saveVoidProfile();const raw=localStorage.getItem("voidSpaceProfile");if(!raw){toastNotice("SAVE EXPORT FAILED","#ff8b9b");return;}const blob=new Blob([raw],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="void-space-save-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);toastNotice("SAVE BACKUP EXPORTED");}
+function importVoidSave(event){const file=event.target.files&&event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(String(reader.result||""));if(!p||typeof p!=="object"||(!("coins" in p)&&!("owned" in p)&&!("ship" in p)))throw new Error("This is not a VOID SPACE profile.");localStorage.setItem("voidSpaceProfile",JSON.stringify(p));toastNotice("SAVE RESTORED — RELOADING");setTimeout(()=>location.reload(),500);}catch(err){const status=document.getElementById("saveStatus");if(status)status.textContent="Import failed: "+err.message;}};reader.onerror=()=>{const status=document.getElementById("saveStatus");if(status)status.textContent="Could not read the selected file.";};reader.readAsText(file);event.target.value="";}
+function spawnAsteroid(){
+ const side=Math.floor(Math.random()*4);let x=side===0?-35:side===1?W+35:Math.random()*W,y=side===2?-35:side===3?H+35:Math.random()*H;
+ const a=Math.atan2(H/2-y,W/2-x)+(Math.random()-.5)*1.4,speed=25+Math.random()*55,radius=16+Math.random()*22;
+ asteroids.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,radius,health:radius*2.2,maxHealth:radius*2.2,rotation:Math.random()*Math.PI*2,spin:(Math.random()-.5)*1.5,contactCooldown:0,type:currentRoute});
+}
+function updateHazards(dt){
+ for(let i=asteroids.length-1;i>=0;i--){const rock=asteroids[i];rock.x+=rock.vx*dt;rock.y+=rock.vy*dt;rock.rotation+=rock.spin*dt;rock.contactCooldown=Math.max(0,rock.contactCooldown-dt);
+  if(rock.x<-70)rock.x=W+60;if(rock.x>W+70)rock.x=-60;if(rock.y<-70)rock.y=H+60;if(rock.y>H+70)rock.y=-60;
+  if(distance(rock,player)<rock.radius+player.radius&&rock.contactCooldown<=0&&player.invincible<=0){if(runUpgrades.shield>0)runUpgrades.shield--;else player.health-=12;player.invincible=.35;rock.contactCooldown=1.2;createBurst(player.x,player.y,14,4,"#ffbf78");if(player.health<=0)endGame(false);}
+ }
+}
+function drawHazards(){
+ for(const rock of asteroids){ctx.save();ctx.translate(rock.x,rock.y);ctx.rotate(rock.rotation);const color=rock.type==="ionstorm"?"#76f4ff":rock.type==="singularity"?"#c39aff":"#9caecb";ctx.fillStyle="rgba(65,83,115,.62)";ctx.strokeStyle=color;ctx.lineWidth=2;ctx.shadowBlur=window.voidFxEnabled===false?0:16;ctx.shadowColor=color;ctx.beginPath();for(let i=0;i<9;i++){const a=i/9*Math.PI*2,r=rock.radius*(.78+.18*Math.sin(i*7.3+rock.radius));const x=Math.cos(a)*r,y=Math.sin(a)*r;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();}
+}
+function useShipUltimate(){
+ if(!running||paused||player.ultimateCooldown>0)return;player.ultimateCooldown=18;
+ const id=selectedShip;
+ if(id==="phantom"){player.invincible=2.2;player.vx+=Math.cos(player.angle)*520;player.vy+=Math.sin(player.angle)*520;createBurst(player.x,player.y,45,8,"#70f3ff");toastNotice("VOID PHASE: INVULNERABLE","#70f3ff");}
+ else if(id==="titan"){player.invincible=2.8;for(const e of enemies){if(distance(player,e)<250)e.health-=190;}createBurst(player.x,player.y,85,10,"#ffbb79");screenFlash=.7;toastNotice("TITAN OVERDRIVE","#ffbb79");}
+ else if(id==="spectre"){for(const e of enemies){e.health-=125;createBurst(e.x,e.y,18,5,"#ff83ee");}screenFlash=.55;toastNotice("PRISM NOVA","#ff83ee");}
+ else{for(const e of enemies){if(distance(player,e)<230)e.health-=170;}createBurst(player.x,player.y,70,9,"#8be2ff");screenFlash=.45;toastNotice("STRIKER NOVA","#8be2ff");}
+}
+
 
 /* =========================================================
    ERROR DISPLAY

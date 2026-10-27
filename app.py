@@ -1764,6 +1764,7 @@ function shoot(){
 ========================================================= */
 
 function useBomb(){
+    const evolution=voidWeaponEvolution();
 
     if(!running || paused) return;
 
@@ -1775,7 +1776,7 @@ function useBomb(){
 
     player.bombCooldown = 8;
 
-    const radius=Math.min(Math.max(W,H)*.62,520);bombSlow=1.15;bombFx={x:player.x,y:player.y,r:12,max:radius,life:.95};const flash=document.getElementById("bombFlash");flash.style.transition="none";flash.style.opacity=".95";requestAnimationFrame(()=>{flash.style.transition="opacity .9s ease-out";flash.style.opacity="0"});
+    const radius=Math.min(Math.max(W,H)*.62,520)*(evolution==="NOVA SINGULARITY"?1.3:1);bombSlow=1.15;bombFx={x:player.x,y:player.y,r:12,max:radius,life:.95};const flash=document.getElementById("bombFlash");flash.style.transition="none";flash.style.opacity=".95";requestAnimationFrame(()=>{flash.style.transition="opacity .9s ease-out";flash.style.opacity="0"});
     for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(b.enemyBullet&&Math.hypot(b.x-player.x,b.y-player.y)<radius)bullets.splice(i,1);}
 
     for(const enemy of enemies){
@@ -2059,7 +2060,7 @@ function distance(a,b){
 
 function updatePlayer(dt){
 
-    if(runUpgrades.regen>0 && player.health<player.maxHealth)player.health=Math.min(player.maxHealth,player.health+runUpgrades.regen*1.15*dt);
+    if(runUpgrades.regen>0 && player.health<player.maxHealth)player.health=Math.min(player.maxHealth,player.health+runUpgrades.regen*1.15*dt*(voidWeaponEvolution()==="AEGIS ENGINE"?2:1));
     let forward = 0;
     let rotation = 0;
 
@@ -3280,7 +3281,39 @@ const runUpgradeDefs=[
 ];
 function offerVoidUpgrades(){if(!running||paused||!document.getElementById("upgradeScreen"))return;paused=true;showScreen("upgradeScreen");const host=document.getElementById("upgradeChoices");host.innerHTML="";[...runUpgradeDefs].sort(()=>Math.random()-.5).slice(0,3).forEach(u=>{const b=document.createElement("button");b.className="upgrade-card";b.innerHTML="<strong>"+u[1]+"</strong><span>"+u[2]+"</span>";b.onclick=()=>{runUpgrades[u[0]]++;if(u[0]==="hull"){player.maxHealth+=20;player.health=Math.min(player.maxHealth,player.health+20)}if(u[0]==="shield")createBurst(player.x,player.y,22,4);paused=false;hideScreens();};host.appendChild(b);});}
 function renderVoidHangar(){const host=document.getElementById("shipCards");host.innerHTML="";Object.entries(ships).forEach(([id,sh])=>{const own=ownedShips.includes(id),sel=selectedShip===id;const card=document.createElement("div");card.className="ship-card";const h=document.createElement("h2");h.textContent=sh.name+(sel?" • SELECTED":"");h.style.color="#ff9cec";card.appendChild(h);const p=document.createElement("p");p.textContent=sh.desc+" • Hull "+sh.hp+" • Thrust "+Math.round(sh.speed*100)+"% • Damage "+Math.round(sh.damage*100)+"%";p.style.margin="12px";card.appendChild(p);const b=document.createElement("button");b.textContent=own?(sel?"EQUIPPED":"SELECT SHIP"):"UNLOCK • ◈ "+sh.cost;b.disabled=sel||(!own&&bankCoins<sh.cost);b.onclick=()=>{if(!own){bankCoins-=sh.cost;ownedShips.push(id)}selectedShip=id;saveVoidProfile();paintMeta();renderVoidHangar()};card.appendChild(b);host.appendChild(card);});}
-function renderVoidMissions(){document.getElementById("missionContent").innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p>";}
+function renderVoidMissions(){document.getElementById("missionContent").innerHTML="<p>PILOT LEVEL: "+pilotLevel+" • XP "+xpProgress+"/"+xpNext+"</p><p>BANKED CREDITS: ◈ "+bankCoins+"</p><p>BEST SCORE: "+bestScore.toLocaleString()+"</p><p>DEEPEST WAVE: "+bestWave+"</p><p>SHIP COLLECTION: "+ownedShips.length+"/"+Object.keys(ships).length+"</p><p>RUN KILLS: "+Math.min(kills,25)+"/25</p><p>RUN WAVE: "+Math.min(wave,5)+"/5</p><p>PERMANENT SKILL RANKS: "+Object.values(shipSkills).reduce((n,s)=>n+Object.values(s).reduce((a,v)=>a+v,0),0)+"</p>";}
+const voidSkillDefs=[
+ {key:"hull",name:"TITANIUM HULL",desc:"+8 maximum hull per rank",base:100},
+ {key:"thrusters",name:"ION THRUSTERS",desc:"+3.5% ship speed per rank",base:120},
+ {key:"reactor",name:"QUANTUM REACTOR",desc:"+5 starting energy per rank",base:110},
+ {key:"weapon",name:"WEAPON CALIBRATION",desc:"+4% ship weapon damage per rank",base:140}
+];
+function renderVoidSkillTree(){
+ const host=document.getElementById("skillTreeCards");if(!host)return;
+ const sh=ships[selectedShip]||ships.striker;
+ const skill=shipSkills[selectedShip]||(shipSkills[selectedShip]={hull:0,thrusters:0,reactor:0,weapon:0});
+ document.getElementById("skillCoins").textContent=bankCoins;
+ document.getElementById("skillShipName").textContent=sh.name;
+ host.innerHTML="";
+ for(const def of voidSkillDefs){
+  const rank=skill[def.key]||0,cost=Math.round(def.base*Math.pow(rank+1,1.55));
+  const card=document.createElement("div");card.className="ship-card";card.style.margin="12px 0";
+  const title=document.createElement("h2");title.textContent=def.name+" • RANK "+rank+"/5";title.style.color="#8be2ff";card.appendChild(title);
+  const desc=document.createElement("p");desc.textContent=def.desc;desc.style.color="#b9c9e8";card.appendChild(desc);
+  const b=document.createElement("button");b.textContent=rank>=5?"MAX RANK":("UPGRADE • ◈ "+cost);b.disabled=rank>=5||bankCoins<cost;
+  b.onclick=()=>{if(rank>=5||bankCoins<cost)return;bankCoins-=cost;skill[def.key]=rank+1;saveVoidProfile();paintMeta();renderVoidSkillTree();};
+  card.appendChild(b);host.appendChild(card);
+ }
+ const note=document.createElement("p");note.style.color="#8be2ff";note.textContent="Skills apply when a new run starts. Each ship has its own permanent skill ranks.";host.appendChild(note);
+}
+function voidWeaponEvolution(){
+ if(runUpgrades.shield>=2&&runUpgrades.regen>=2)return "AEGIS ENGINE";
+ if(runUpgrades.bomb>=3&&runUpgrades.magnet>=2)return "NOVA SINGULARITY";
+ if(runUpgrades.pierce>=3&&runUpgrades.damage>=2)return "PHASE LANCE";
+ if(runUpgrades.critical>=3&&runUpgrades.fire>=3)return "STARSTORM";
+ if(runUpgrades.damage>=4&&runUpgrades.drone>=2)return "PLASMA SWARM";
+ return "";
+}
 
 /* =========================================================
    ERROR DISPLAY

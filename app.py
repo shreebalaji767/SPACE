@@ -1769,23 +1769,12 @@ function shoot(){
 
     player.fireCooldown=Math.max(.055,.12-runUpgrades.fire*.012);
 
-    const speed = 720;
-
-    const evolved=voidWeaponEvolution();const shotCount=(runUpgrades.critical>=4?3:(runUpgrades.critical>=2?2:1))+(evolved==="STARSTORM"?2:0);
-    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(Math.random()<Math.min(.35,runUpgrades.critical*.05)?2:1)*(evolved==="PLASMA SWARM"?1.35:1);
-    for(let i=0;i<shotCount;i++){
-        const angle=player.angle+(i-(shotCount-1)/2)*.12;
-        bullets.push({
-            damage:shotDamage,
-            x:player.x+Math.cos(angle)*20,
-            y:player.y+Math.sin(angle)*20,
-            vx:Math.cos(angle)*speed+player.vx*.2,
-            vy:Math.sin(angle)*speed+player.vy*.2,
-            life:1.1,
-            radius:3,
-            pierce:runUpgrades.pierce+(evolved==="PHASE LANCE"?2:0)
-        });
-    }
+    const weapon=weaponDefs[runWeaponIndex].id,speed=weaponDefs[runWeaponIndex].speed||720,evolved=voidWeaponEvolution();
+    const baseCount=runUpgrades.critical>=4?3:(runUpgrades.critical>=2?2:1),shotCount=baseCount+(evolved==="STARSTORM"?2:0);
+    const shotDamage=(30+runUpgrades.damage*12)*(player.shipDamage||1)*(Math.random()<Math.min(.35,runUpgrades.critical*.05)?2:1)*(evolved==="PLASMA SWARM"?1.35:1)*(1+weaponLevel*.12);
+    const angles=weapon==="shotgun"?Array.from({length:5},(_,i)=>player.angle+(i-2)*.22):Array.from({length:shotCount},(_,i)=>player.angle+(i-(shotCount-1)/2)*.12);
+    for(const angle of angles){const missile=weapon==="missile",rail=weapon==="railgun",chain=weapon==="chain",blackhole=weapon==="blackhole";bullets.push({damage:shotDamage*(weapon==="shotgun"?.55:missile?1.5:rail?1.8:1),x:player.x+Math.cos(angle)*20,y:player.y+Math.sin(angle)*20,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:missile?2.2:1.1,radius:missile?5:rail?4:3,pierce:runUpgrades.pierce+(evolved==="PHASE LANCE"?2:0)+(rail?99:0),homing:missile,chain:chain?3:0,splash:blackhole?100:0,blackhole,color:weaponDefs[runWeaponIndex].color});}
+    for(let d=0;d<Math.min(3,runUpgrades.drone);d++){const side=d%2===0?-1:1,angle=player.angle+side*.32;bullets.push({damage:shotDamage*.65,x:player.x+Math.cos(angle)*18,y:player.y+Math.sin(angle)*18,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:1.1,radius:3,pierce:runUpgrades.pierce,color:"#8be2ff"});}
     for(let d=0;d<Math.min(3,runUpgrades.drone);d++){
         const side= d%2===0?-1:1, angle=player.angle+side*.32;
         bullets.push({damage:shotDamage*.65,x:player.x+Math.cos(angle)*18,y:player.y+Math.sin(angle)*18,vx:Math.cos(angle)*speed+player.vx*.2,vy:Math.sin(angle)*speed+player.vy*.2,life:1.1,radius:3,pierce:runUpgrades.pierce+(evolved==="PHASE LANCE"?2:0)});
@@ -1943,7 +1932,8 @@ function spawnEnemy(){
 ========================================================= */
 
 function spawnBoss(){
-
+    const kinds=[{name:"DREADNOUGHT",color:"#bd65ff"},{name:"VOID WRAITH",color:"#57e8ff"},{name:"NOVA COLOSSUS",color:"#ff8bca"}];
+    const kind=kinds[Math.max(0,Math.floor(wave/5)-1)%kinds.length];
     enemies.push({
 
         x:W/2,
@@ -1962,13 +1952,8 @@ function spawnBoss(){
 
         damage:35,
 
-        type:"boss",
-
-        score:1000,
-
-        boss:true,
-
-        fireTimer:2
+        type:"boss",bossName:kind.name,bossColor:kind.color,bossKind:Math.max(0,Math.floor(wave/5)-1)%kinds.length,phase:1,
+        score:1000,boss:true,fireTimer:1.8
 
     });
 
@@ -2003,7 +1988,7 @@ function spawnPowerup(){
 
 function collectPowerup(power){
 
-    if(power.type==="weapon"){runUpgrades.damage++;}
+    if(power.type==="weapon"){runWeaponIndex=(runWeaponIndex+1)%weaponDefs.length;weaponLevel=Math.min(5,weaponLevel+1);toastNotice("WEAPON ACQUIRED: "+weaponDefs[runWeaponIndex].name);}
     else if(power.type==="shield"){player.invincible=Math.max(player.invincible,5);}
     else if(power.type==="coins"){awardVoidCoins(40);}
     else if(power.type === "health"){
@@ -2052,7 +2037,7 @@ function collectPowerup(power){
    PARTICLES
 ========================================================= */
 
-function createBurst(x,y,count,power){
+function createBurst(x,y,count,power,color){
 
     count=window.voidFxEnabled===false?Math.ceil(count*.35):count;
     const particleCap=window.voidFxEnabled===false?160:420;
@@ -2077,7 +2062,8 @@ function createBurst(x,y,count,power){
 
             maxLife:.9,
 
-            size:1+Math.random()*3
+            size:1+Math.random()*3,
+            color:color||"#8edcff"
 
         });
     }
@@ -2345,10 +2331,12 @@ function updateBullets(dt){
     for(let i=bullets.length-1;i>=0;i--){
 
         const b = bullets[i];
+        if(b.homing&&!b.enemyBullet&&enemies.length){let target=null,best=Infinity;for(const e of enemies){const d=distance(b,e);if(d<best){best=d;target=e;}}if(target){const a=Math.atan2(target.y-b.y,target.x-b.x),v=Math.hypot(b.vx,b.vy)||720;b.vx+=(Math.cos(a)*v-b.vx)*Math.min(1,dt*3.5);b.vy+=(Math.sin(a)*v-b.vy)*Math.min(1,dt*3.5);}}
 
         b.x += b.vx*dt;
         b.y += b.vy*dt;
 
+        if(!b.enemyBullet&&asteroids.length){let consumed=false;for(let j=asteroids.length-1;j>=0;j--){const rock=asteroids[j];if(distance(b,rock)<rock.radius+b.radius){rock.health-=b.damage||25;b.life=0;consumed=true;createBurst(b.x,b.y,5,2,b.color||"#9bb6d5");if(rock.health<=0){createBurst(rock.x,rock.y,22,5,"#ffc68b");if(Math.random()<.16)powerups.push({x:rock.x,y:rock.y,radius:13,type:"coins",life:12});asteroids.splice(j,1);}break;}}if(consumed){bullets.splice(i,1);continue;}}
         b.life -= dt;
 
         if(
@@ -2597,7 +2585,9 @@ function bulletCollisions(){
                 enemy.radius+bullet.radius
             ){
 
-                enemy.health-=bullet.damage||(enemy.boss?16:30);
+                const dealt=bullet.damage||(enemy.boss?16:30);enemy.health-=dealt;
+                if(bullet.splash){for(const other of enemies){if(other!==enemy&&distance(bullet,other)<bullet.splash){other.health-=dealt*.55;if(bullet.blackhole){other.x+=(bullet.x-other.x)*.12;other.y+=(bullet.y-other.y)*.12;}}}createBurst(bullet.x,bullet.y,30,6,"#c29bff");}
+                if(bullet.chain>0){let left=bullet.chain,origin=enemy;while(left-->0){let target=null,nearest=Infinity;for(const other of enemies){if(other===origin)continue;const d=distance(origin,other);if(d<nearest&&d<190){nearest=d;target=other;}}if(!target)break;target.health-=dealt*.45;createBurst(target.x,target.y,9,3,"#72f7ff");origin=target;}}
 
                 createBurst(
                     bullet.x,
@@ -3079,7 +3069,7 @@ function drawEnemy(enemy){
 function drawEnemies(){
 
     for(const enemy of enemies)drawEnemy(enemy);
-    const boss=enemies.find(e=>e.boss),bar=document.getElementById("bossBar");if(bar){bar.style.display=boss&&running?"block":"none";if(boss)document.getElementById("bossBarFill").style.width=Math.max(0,boss.health/boss.maxHealth*100)+"%";}
+    const boss=enemies.find(e=>e.boss),bar=document.getElementById("bossBar");if(bar){bar.style.display=boss&&running?"block":"none";if(boss){document.getElementById("bossBarFill").style.width=Math.max(0,boss.health/boss.maxHealth*100)+"%";document.getElementById("bossName").textContent=(boss.bossName||"BOSS")+" • PHASE "+(boss.phase||1);document.getElementById("bossBarFill").style.background=boss.bossColor||"linear-gradient(90deg,#6b5bff,#ff42d0)";}}
 }
 
 
@@ -3158,7 +3148,7 @@ function drawParticles(){
                 p.life/p.maxLife
             );
 
-        ctx.fillStyle = "#8edcff";
+        ctx.fillStyle = p.color || "#8edcff";
 
         ctx.beginPath();
 

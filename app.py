@@ -1085,7 +1085,7 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
 
         <div class="hud-box">
             <div>SCORE <b id="score">0</b></div>
-            <div>WAVE <b id="wave">1</b></div>
+            <div><span id="waveLabel">WAVE</span> <b id="wave">1</b></div>
             <div>BUILD <b id="evolutionLabel">STANDARD</b></div>
             <div>WEAPON <b id="weaponLabel">PULSE</b></div>
             <div>MODE <b id="modeLabel">SURVIVAL</b></div>
@@ -1343,7 +1343,7 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
 <div class="screen" id="skillTreeScreen"><div class="panel"><h1>SHIP SKILL TREE</h1><p style="color:#9dcaff;margin:12px">Permanent upgrades for the currently selected ship. Ranks are saved on this device.</p><div class="neon-stats"><span>◈ CREDITS <b id="skillCoins">0</b></span><span>SHIP <b id="skillShipName">NEON STRIKER</b></span></div><div id="skillTreeCards"></div><button id="skillTreeBackButton">BACK TO HANGAR</button></div></div>
 <div class="screen" id="missionScreen"><div class="panel"><h1>MISSIONS & RECORDS</h1><div id="missionContent" style="line-height:2;color:#c7d9ff;margin:20px 0"></div><button id="missionBackButton">BACK</button></div></div>
 <div class="screen" id="modeScreen"><div class="panel"><h1>SELECT GAME MODE</h1><p style="color:#9dcaff;margin:10px">Choose your challenge. All modes are free.</p><div class="feature-grid">
-<button data-mode="survival">SURVIVAL <small>Classic escalating waves</small></button><button data-mode="endless">ENDLESS <small>Faster escalating waves</small></button><button data-mode="bossrush">BOSS RUSH <small>Boss encounters every wave</small></button><button data-mode="timeattack">TIME ATTACK <small>Three minutes to score</small></button><button data-mode="hardcore">HARDCORE <small>One life, tougher enemies</small></button><button data-mode="daily">DAILY SEED <small>Same seeded challenge each day</small></button><button id="campaignOpenButton">CAMPAIGN <small>Clear three sectors and their bosses</small></button>
+<button data-mode="survival">SURVIVAL <small>Classic escalating waves</small></button><button data-mode="endless">ENDLESS <small>Infinite levels · escalating enemy waves and bosses</small></button><button data-mode="bossrush">BOSS RUSH <small>Boss encounters every wave</small></button><button data-mode="timeattack">TIME ATTACK <small>Three minutes to score</small></button><button data-mode="hardcore">HARDCORE <small>One life, tougher enemies</small></button><button data-mode="daily">DAILY SEED <small>Same seeded challenge each day</small></button><button id="campaignOpenButton">CAMPAIGN <small>Clear three sectors and their bosses</small></button>
 </div><button id="modeBackButton">BACK</button></div></div>
 <div class="screen" id="campaignScreen"><div class="panel"><h1>SECTOR CAMPAIGN</h1><p style="color:#9dcaff;margin:10px">Choose a route. Clear wave 8 and survive the sector.</p><div class="feature-grid"><button data-route="derelict">DERELICT BELT <small>Asteroids and wreckage</small></button><button data-route="ionstorm">ION STORM <small>Charged debris field</small></button><button data-route="singularity">SINGULARITY EDGE <small>Dark matter hazards</small></button></div><button id="campaignBackButton">BACK TO MODES</button></div></div>
 <div class="screen" id="achievementsScreen"><div class="panel"><h1>ACHIEVEMENTS</h1><p style="color:#9dcaff;margin:10px">Earn badges through play. Progress is stored locally.</p><div id="achievementCards"></div><button id="achievementsBackButton">BACK</button></div></div>
@@ -3097,7 +3097,7 @@ function updateWave(dt){
     */
 
     if(
-        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:currentGameMode==="endless"?14:currentGameMode==="daily"?16:18) &&
+        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:currentGameMode==="endless"?12:currentGameMode==="daily"?16:18) &&
         enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5) &&
         !enemies.some(e=>e.boss)
     ){
@@ -3115,7 +3115,12 @@ function updateWave(dt){
         sound(220,.3,"square",.03);
 
         if(currentGameMode==="bossrush"||wave%5===0||(currentGameMode==="campaign"&&wave===8))spawnBoss();
-        if(wave%3===0)offerVoidUpgrades();if(!landingShowcaseMode)recordDailyMissionProgress("wave",wave);
+        if(wave%3===0)offerVoidUpgrades();
+        if(currentGameMode==="endless"&&wave%10===0&&!landingShowcaseMode){
+            toastNotice("ENDLESS MILESTONE • LEVEL "+wave,"#b8b0ff");
+            awardVoidXP(25+Math.min(175,wave));
+        }
+        if(!landingShowcaseMode)recordDailyMissionProgress("wave",wave);
     }
 
     enemySpawnTimer -= dt;
@@ -3652,6 +3657,8 @@ function updateHUD(){
 
     document.getElementById("wave")
         .textContent = wave;
+    const waveLabel=document.getElementById("waveLabel");
+    if(waveLabel)waveLabel.textContent=currentGameMode==="endless"?"LEVEL":"WAVE";
 
     document.getElementById("kills")
         .textContent = kills;

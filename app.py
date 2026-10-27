@@ -2976,7 +2976,9 @@ loadVoidProfile();createStars();updateHUD();paintMeta();\nfor(const [id,onText,o
 
 @app.route("/")
 def index():
-    return render_template_string(HTML)
+    # HTML is a complete static document; bypass Jinja parsing so CSS selectors
+    # such as `{#id` are not mistaken for Jinja comment delimiters.
+    return Response(HTML, mimetype="text/html")
 
 
 @app.route("/manifest.json")

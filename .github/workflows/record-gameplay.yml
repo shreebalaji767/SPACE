@@ -67,7 +67,17 @@ jobs:
                   )
                   page = await context.new_page()
                   await page.goto("http://127.0.0.1:5000/?record=1", wait_until="domcontentloaded")
-                  await page.wait_for_timeout(22000)
+                  # Validate the actual recording route before accepting the footage:
+                  # the HUD must show a live boss and at least one regular hostile.
+                  await page.wait_for_timeout(1500)
+                  threat = (await page.locator("#previewThreat").inner_text()).strip()
+                  if not threat.startswith("BOSS + ") or not threat.endswith(" HOSTILES"):
+                      raise RuntimeError(f"Trailer must show a boss and enemy wave together; HUD was: {threat!r}")
+                  count = int(threat.removeprefix("BOSS + ").removesuffix(" HOSTILES"))
+                  if count < 1:
+                      raise RuntimeError(f"Trailer HUD reports no regular hostiles: {threat!r}")
+                  print(f"Validated simultaneous boss + {count} hostiles in recording HUD")
+                  await page.wait_for_timeout(20500)
                   video = page.video
                   await context.close()
                   await browser.close()

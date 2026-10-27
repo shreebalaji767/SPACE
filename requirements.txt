@@ -1,0 +1,2 @@
+# Flask web server for VOID SPACE
+Flask>=3.0,<4.0

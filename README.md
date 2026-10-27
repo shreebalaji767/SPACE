@@ -8,11 +8,11 @@ A free, browser-based neon cyberpunk space-survival arcade game with a premium-s
 
 - **Recorded cinematic trailer:** the landing page plays `/static/void-space-gameplay.webm` on loop. Regular visitors do not start the game simulation, autopilot, or gameplay animation on the landing page; only the isolated `?record=1` capture workflow runs the simulation to produce the footage. That capture starts in Boss Rush and seeds a supporting enemy wave so the loop visibly features active enemy combat and a live boss fight. **Play Now** starts real gameplay only after a deliberate click.
 - **Arcade combat:** fast fighters, tanks, ranged snipers, enemy projectiles, escalating waves, and three named boss variants.
-- **Multi-phase bosses:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health, with phase-transition slow motion, flashes, unique colors, and a live boss bar.
-- **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.
+- **Multi-phase bosses + weak points:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health. A moving, intermittently exposed weak point deals bonus damage when hit, with impact slow motion, flashes, and a live phase-aware boss bar.
+- **Six weapon families + permanent armory:** Pulse is the starter weapon; spend earned credits to unlock homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity in the Ship Hangar. Choose a saved starting weapon, then weapon pickups cycle only through weapons you have unlocked and level them up. Rare reward crates can also unlock a weapon.
 - **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
-- **Reward crates:** enemies can drop glowing, diamond-framed crates containing free credits, hull repair, energy, weapon damage, or bomb upgrades.
-- **Kill-chain combo rewards:** consecutive eliminations within a four-second window build a combo; every five kills grants bonus credits and a neon burst.
+- **Reward crates:** enemies can drop glowing, diamond-framed crates containing free credits, hull repair, energy, weapon damage, bomb upgrades, or a permanent weapon unlock. No paid crates or purchases.
+- **Kill-chain combo rewards:** consecutive eliminations within a four-second window build a combo; every five kills grants bonus credits, a neon burst, and a brief slow-motion impact. Boss defeats trigger a longer cinematic finish.
 - **Daily contracts:** three UTC-date-based objectives — eliminate 10 hostiles, reach wave 5, and defeat a boss — award free credits and XP once per day. Progress and claims persist in localStorage.
 - **Interactive environments:** destructible asteroids drift through each run, damage the ship on contact, and can drop credits when destroyed. Campaign routes tint the hazard fields.
 - **Seven game modes:** Survival, faster-scaling Endless, Boss Rush, three-minute Time Attack, tougher Hardcore, **Daily Seed** — a reproducible challenge whose procedural enemy/hazard sequence is seeded by the UTC date — and the multi-sector Campaign.
@@ -31,14 +31,14 @@ A free, browser-based neon cyberpunk space-survival arcade game with a premium-s
   - **Prism Spectre** — high-damage prototype.
 - **Power-ups:** health, energy, rapid fire, bomb refill, weapon upgrade, temporary shield, and credits.
 - **Neon presentation:** glowing cyberpunk colors, a deep-space background, particles, shockwaves, and boss health display.
-- **Responsive controls:** keyboard, mouse, touch, and on-screen desktop controls.
+- **Responsive controls:** keyboard, mouse, touch, and on-screen desktop controls. Touch FIRE supports held autofire; adaptive canvas pixel ratio and capped background stars reduce rendering cost on smaller or lower-powered devices.
 - **Installable PWA:** manifest, SVG app icon, and a service worker that caches the game shell for offline reopening after the first successful load.
 - **Performance options:** full/lite visual effects, sound toggle, and screen-shake toggle.
 - **Accessibility basics:** focus-friendly buttons, reduced-motion CSS support, and mobile safe-area handling.
 
 ## Save system (no database)
 
-VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed. The existing `voidSpaceProfile` key is preserved, and older profiles migrate forward when loaded. The profile includes achievements, lifetime kills, boss defeats, campaign completions, per-mode records, ship skill ranks, daily contract progress/claims, and preferences. Daily contract progress resets at UTC midnight; claimed rewards cannot be claimed again for the same UTC date.
+VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships and weapons, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed. The existing `voidSpaceProfile` key is preserved, and older profiles migrate forward when loaded. The versioned profile includes achievements, lifetime kills, boss defeats, campaign completions, per-mode records, ship and weapon unlocks/selections, ship skill ranks, daily contract progress/claims, and preferences. Existing profile keys are retained and older saves load with safe starter defaults for the new weapon fields. Daily contract progress resets at UTC midnight; claimed rewards cannot be claimed again for the same UTC date.
 
 - **No database or server-side player account is used.**
 - Saves belong to that browser and site origin; they do not automatically sync between devices or browsers.
@@ -65,7 +65,7 @@ Open the deployed game in a modern browser. On compatible browsers, choose **INS
 | Aim | Move the mouse over the game |
 | Touch | Use the on-screen touch controls |
 
-On desktop, the on-screen control dock is available while a run is active. On mobile, use the touch controls displayed by the game. Weapon pickups cycle to the next weapon and increase its level; Q lets keyboard players switch manually.
+On desktop, the on-screen control dock is available while a run is active. On mobile, use the touch controls displayed by the game. The Ship Hangar's Weapon Armory lets you unlock and equip permanent weapons. Weapon pickups cycle through your unlocked arsenal and increase its level. Keyboard players can use **Q** to cycle weapons during a run.
 
 ## Run locally
 

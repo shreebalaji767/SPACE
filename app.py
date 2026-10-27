@@ -1249,6 +1249,7 @@ function hideScreens(){
 function showScreen(id){
     hideScreens();
     document.getElementById(id).classList.add("active");
+    try{sessionStorage.setItem("voidSpaceLastScreen",id);}catch(e){}
 }
 
 
@@ -3580,6 +3581,18 @@ document.getElementById("landingModesButton").addEventListener("click",()=>showS
    INITIAL STATE
 ========================================================= */
 
+// Restore the last screen on browser refresh instead of forcing the landing page.
+try{
+  const lastScreen=sessionStorage.getItem("voidSpaceLastScreen");
+  const validScreen=lastScreen&&screens.includes(lastScreen)&&document.getElementById(lastScreen);
+  if(validScreen){
+    // A live run is not serialized between reloads; return to the main menu rather than
+    // showing a dead gameplay/pause screen with no active run.
+    const restoreScreen=["landingScreen","menuScreen","howScreen","settingsScreen","hangarScreen","missionScreen","upgradeScreen","skillTreeScreen","modeScreen","campaignScreen","achievementsScreen","saveToolsScreen"].includes(lastScreen)?lastScreen:"menuScreen";
+    hideScreens();
+    document.getElementById(restoreScreen).classList.add("active");
+  }
+}catch(e){}
 loadVoidProfile();createStars();updateHUD();paintMeta();
 for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}
 
@@ -3624,7 +3637,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v4";
+const CACHE = "void-space-v5";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

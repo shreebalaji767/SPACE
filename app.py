@@ -827,7 +827,7 @@ body::before{
 .preview-boss-bar{height:5px;margin-top:6px;background:rgba(255,255,255,.1);border-radius:9px;overflow:hidden;}
 .preview-boss-bar span{display:block;width:68%;height:100%;background:linear-gradient(90deg,#9b8eff,#f0a6e5);box-shadow:0 0 12px #b5a7ff;}
 .preview-caption{padding:12px 15px;display:flex;justify-content:space-between;gap:12px;align-items:center;background:rgba(12,17,38,.96);border-top:1px solid rgba(173,190,255,.12);font-size:10px;color:#aab7d7;}
-.preview-caption b{color:#e9eaff;letter-spacing:.06em;}.preview-video-controls{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none;font:800 9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;color:#e9eaff;text-shadow:0 1px 6px #000}.preview-video-controls div{display:flex;gap:6px;pointer-events:auto}.preview-video-controls button{margin:0;min-height:30px;padding:6px 9px;font-size:9px;letter-spacing:.05em;background:rgba(7,11,27,.88);border-color:rgba(173,190,255,.28)}.preview-video-controls button:focus-visible{outline:2px solid #b8f0ff;outline-offset:2px}body.gameplay-record-mode .preview-video-controls{display:none;}
+.preview-caption b{color:#e9eaff;letter-spacing:.06em;}.preview-video-controls{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none;font:800 9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;color:#e9eaff;text-shadow:0 1px 6px #000}.preview-video-controls div{display:flex;gap:6px;pointer-events:auto}.preview-video-controls button{margin:0;min-height:30px;padding:6px 9px;font-size:9px;letter-spacing:.05em;background:rgba(7,11,27,.88);border-color:rgba(173,190,255,.28)}.preview-video-controls button:focus-visible{outline:2px solid #b8f0ff;outline-offset:2px}body.gameplay-record-mode .preview-video-controls{display:none;}.global-home-logo{position:fixed;z-index:100;top:14px;left:14px;display:none;align-items:center;gap:9px;padding:8px 12px 8px 8px;border:1px solid rgba(173,190,255,.24);border-radius:13px;background:rgba(5,9,24,.88);backdrop-filter:blur(12px);color:#f0f2ff;font:800 10px ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.28)}.global-home-logo svg{width:30px;height:30px;display:block}.global-home-logo:hover{border-color:rgba(184,240,255,.7);box-shadow:0 0 24px rgba(143,193,255,.18)}.global-home-logo:focus-visible{outline:2px solid #b8f0ff;outline-offset:3px}body:not(.gameplay-record-mode) .global-home-logo{display:flex}body:has(#landingScreen.active) .global-home-logo{display:none}body.gameplay-record-mode .global-home-logo{display:none}@media(max-width:520px){.global-home-logo{top:8px;left:8px;padding:6px 8px 6px 6px}.global-home-logo svg{width:25px;height:25px}}
 .landing-section-head{text-align:center;margin-bottom:20px;}
 .landing-section-head small{color:#b8b0ff;letter-spacing:.22em;font-size:9px;font-weight:800;}
 .landing-section-head h2{margin-top:10px;font-size:clamp(23px,3vw,32px);letter-spacing:-.03em;color:#eff1ff;}
@@ -848,6 +848,9 @@ body::before{
 <body>
 
 <canvas id="game"></canvas>
+<button type="button" class="global-home-logo" id="globalHomeLogo" aria-label="Return to VOID SPACE landing page" title="Back to landing page">
+  <svg viewBox="0 0 80 80" aria-hidden="true"><defs><linearGradient id="globalShip" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b8f0ff"/><stop offset="1" stop-color="#a69bff"/></linearGradient></defs><rect x="3" y="3" width="74" height="74" rx="20" fill="#0b1230" stroke="#6476bd" stroke-opacity=".8"/><circle cx="40" cy="40" r="27" fill="none" stroke="#6476bd" stroke-dasharray="3 6"/><path d="M57 40 20 23l9 17-9 17z" fill="url(#globalShip)" stroke="#fff" stroke-width="2"/><circle cx="49" cy="40" r="4" fill="#fff"/></svg><span>VOID SPACE</span>
+</button>
 
 <div id="hud">
     <div class="hud-row">
@@ -1253,9 +1256,15 @@ function showScreen(id){
 
 function goToLanding(){
     window.stopVoidLandingShowcase?.();
+    running=false;paused=false;landingShowcaseMode=false;
+    for(const k of Object.keys(keys))keys[k]=false;
+    const hud=document.getElementById("hud");if(hud)hud.style.display="none";
+    if(gameControls)gameControls.style.display="none";
     showScreen("landingScreen");
-    window.startVoidLandingShowcase?.();
+    const video=document.getElementById("previewVideo");
+    if(video){const p=video.play();if(p&&p.catch)p.catch(()=>{});}
 }
+document.getElementById("globalHomeLogo")?.addEventListener("click",goToLanding);
 document.querySelector(".landing-brand")?.addEventListener("click",goToLanding);
 document.querySelector(".landing-brand")?.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goToLanding();}});
 for(const el of [document.getElementById("menuHomeLogo"),document.getElementById("menuHomeWordmark"),document.getElementById("menuHomeSubtitle")]){
@@ -3603,7 +3612,9 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function resize(){const r=preview.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=Math.max(1,r.width);h=Math.max(1,r.height);preview.width=Math.round(w*dpr);preview.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
  function start(){
-   if(active||!document.getElementById("landingScreen").classList.contains("active"))return;
+   // Only the dedicated recording workflow may run the game engine.
+   // Normal visitors always watch the prerecorded video and never get auto-piloted.
+   if(!recordMode||active||!document.getElementById("landingScreen").classList.contains("active"))return;
    active=true;restarting=false;autoplayTime=0;nextBomb=4;nextUltimate=8;for(const k of Object.keys(keys))keys[k]=false;
    currentGameMode="survival";
    startGame(true);
@@ -3639,8 +3650,8 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
  }
  function draw(now){
    const dt=Math.min(.05,(now-(last||now))/1000);last=now;
-   if(document.getElementById("landingScreen").classList.contains("active")){
-     if(recordMode&&!active)start();
+   if(recordMode&&document.getElementById("landingScreen").classList.contains("active")){
+     if(!active)start();
      if(active&&landingShowcaseMode&&running){
        autoplay(dt);
        try{ctx.drawImage(gameCanvas,0,0,gameCanvas.width,gameCanvas.height,0,0,w,h);}catch(e){}
@@ -3730,7 +3741,7 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v13";
+const CACHE = "void-space-v14";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg"])));
   self.skipWaiting();

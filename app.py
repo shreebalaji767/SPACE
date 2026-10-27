@@ -1329,7 +1329,7 @@ function createStars(){
 
 function resetGame(){
 
-    score=0;wave=1;kills=0;runCoins=0;runXP=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
+    score=0;wave=1;kills=0;runCoins=0;runXP=0;runTime=0;runEndedByVictory=false;runWeaponIndex=0;weaponLevel=0;hazardTimer=4;asteroids=[];cinematicSlow=0;screenFlash=0;runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0};
 
     waveTimer = 0;
     enemySpawnTimer = 0;
@@ -1398,13 +1398,17 @@ function togglePause(){
     }
 }
 
-function endGame(){
+function endGame(victory=false){
 
     if(!running) return;
 
     running = false;
     paused = false;
-
+    runEndedByVictory=!!victory;
+    document.querySelector("#gameOverScreen h1").textContent=victory?"SECTOR CLEARED":"GAME OVER";
+    if(victory){campaignWins++;campaignProgress[currentRoute]=(campaignProgress[currentRoute]||0)+1;awardVoidCoins(500+wave*25);awardVoidXP(300);createBurst(player.x,player.y,150,12,"#ffe9a6");screenFlash=.9;}
+    modeRecords[currentGameMode]=Math.max(modeRecords[currentGameMode]||0,score);
+    checkVoidAchievements();
     document.getElementById("finalScore").textContent =
         score.toLocaleString();
 
@@ -1565,6 +1569,7 @@ window.addEventListener("keydown",(e)=>{
     if(code === "KeyB" && !e.repeat){
         useBomb();
     }
+    if(code==="KeyQ"&&!e.repeat&&running){runWeaponIndex=(runWeaponIndex+1)%weaponDefs.length;toastNotice("WEAPON SWITCHED: "+weaponDefs[runWeaponIndex].name);}
 
 });
 
@@ -2673,6 +2678,8 @@ function updateParticles(dt){
 function updateWave(dt){
 
     waveTimer += dt;
+    if(currentGameMode==="timeattack"&&runTime>=180){endGame(false);return;}
+    if(currentGameMode==="campaign"&&wave>=8&&enemies.length===0){endGame(true);return;}
 
     /*
        New wave every 18 seconds if
@@ -2680,8 +2687,8 @@ function updateWave(dt){
     */
 
     if(
-        waveTimer > 18 &&
-        enemies.filter(e=>!e.boss).length < 5
+        waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:18) &&
+        enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5)
     ){
 
         waveTimer = 0;
@@ -2696,11 +2703,13 @@ function updateWave(dt){
 
         sound(220,.3,"square",.03);
 
-        if(wave%5===0)spawnBoss();
+        if(currentGameMode==="bossrush"||wave%5===0)spawnBoss();
         if(wave%3===0)offerVoidUpgrades();
     }
 
     enemySpawnTimer -= dt;
+    hazardTimer-=dt;
+    if(hazardTimer<=0&&asteroids.length<7){spawnAsteroid();hazardTimer=7+Math.random()*5;}
 
     const enemyCount =
         enemies.filter(e=>!e.boss).length;
@@ -2713,7 +2722,7 @@ function updateWave(dt){
 
     if(
         enemySpawnTimer <= 0 &&
-        enemyCount < maximum
+        enemyCount < maximum && !(currentGameMode==="campaign"&&wave>=8)
     ){
 
         enemySpawnTimer =
@@ -2766,13 +2775,16 @@ function update(dt){
 
     if(!running || paused) return;
 
-    dt=Math.min(dt,.033);
+    dt=Math.min(dt,.033);runTime+=dt;
     if(bombSlow>0){bombSlow=Math.max(0,bombSlow-dt);dt*=.22;}
+    if(cinematicSlow>0){cinematicSlow=Math.max(0,cinematicSlow-dt);dt*=.28;}
+    screenFlash=Math.max(0,screenFlash-dt*1.5);toastTimer=Math.max(0,toastTimer-dt);
 
     updateStars(dt);
     updatePlayer(dt);
     updateBullets(dt);
     updateEnemies(dt);
+    updateHazards(dt);
     bulletCollisions();
     updatePowerups(dt);
     updateParticles(dt);
@@ -3216,6 +3228,7 @@ function draw(){
     drawBackground();
     if(bombFx){bombFx.life-=.016;bombFx.r=bombFx.max*(1-Math.pow(Math.max(0,bombFx.life/.95),2));ctx.save();ctx.globalAlpha=Math.max(0,bombFx.life/.95);ctx.strokeStyle="#8cf7ff";ctx.lineWidth=5;ctx.shadowBlur=35;ctx.shadowColor="#f0f";ctx.beginPath();ctx.arc(bombFx.x,bombFx.y,bombFx.r,0,Math.PI*2);ctx.stroke();ctx.restore();if(bombFx.life<=0)bombFx=null;}
     drawParticles();
+    drawHazards();
     drawPowerups();
     drawBullets();
     drawEnemies();
@@ -3224,6 +3237,8 @@ function draw(){
     if(running){
         drawPlayer();
     }
+    if(screenFlash>0){ctx.save();ctx.globalAlpha=Math.min(.8,screenFlash);ctx.fillStyle="#d8c9ff";ctx.fillRect(0,0,W,H);ctx.restore();}
+    const toast=document.getElementById("toastNotice");if(toast){toast.textContent=toastMessage;toast.style.borderColor=toastColor;toast.classList.toggle("show",toastTimer>0);}
 }
 
 
@@ -3242,6 +3257,10 @@ function updateHUD(){
 
     document.getElementById("kills")
         .textContent = kills;
+    const weaponLabel=document.getElementById("weaponLabel");if(weaponLabel)weaponLabel.textContent=weaponDefs[runWeaponIndex].name+(weaponLevel?" +"+weaponLevel:"");
+    const modeLabel=document.getElementById("modeLabel");if(modeLabel)modeLabel.textContent=currentGameMode.toUpperCase();
+    const timerLabel=document.getElementById("runTimerLabel");if(timerLabel)timerLabel.textContent=Math.floor(runTime/60).toString().padStart(2,"0")+":"+Math.floor(runTime%60).toString().padStart(2,"0");
+    checkVoidAchievements();
 
     const evolutionLabel=document.getElementById("evolutionLabel");
     if(evolutionLabel)evolutionLabel.textContent=voidWeaponEvolution()||"STANDARD";
@@ -3298,10 +3317,12 @@ requestAnimationFrame(gameLoop);
 
 /* VOID SPACE EXPANSION: progression, ship hangar, run upgrades and PWA */
 let bankCoins=0,pilotLevel=1,xpProgress=0,xpNext=100,runXP=0,runCoins=0,bestScore=0,bestWave=1;
+let currentGameMode="survival",currentRoute="derelict",runTime=0,runEndedByVictory=false,runWeaponIndex=0,weaponLevel=0,asteroids=[],hazardTimer=5,cinematicSlow=0,screenFlash=0,toastTimer=0,toastMessage="",toastColor="#8be2ff";
+let unlockedAchievements=[],lifetimeKills=0,bossesDefeated=0,campaignWins=0,campaignProgress={},modeRecords={};
 let selectedShip="striker",ownedShips=["striker"],shipSkills={},runUpgrades={damage:0,fire:0,engine:0,hull:0,critical:0,magnet:0,pierce:0,shield:0,bomb:0,regen:0,drone:0},installPrompt=null,bombFx=null,bombSlow=0;
 const ships={striker:{name:"NEON STRIKER",cost:0,hp:100,speed:1,damage:1,desc:"Balanced all-rounder"},phantom:{name:"VOID PHANTOM",cost:350,hp:80,speed:1.28,damage:1.15,desc:"Fast interceptor"},titan:{name:"NOVA TITAN",cost:600,hp:155,speed:.82,damage:1.28,desc:"Heavy assault"},spectre:{name:"PRISM SPECTRE",cost:1000,hp:110,speed:1.12,damage:1.55,desc:"Prototype high damage"}};
-function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";shipSkills=p.shipSkills&&typeof p.shipSkills==="object"?p.shipSkills:{};for(const id of Object.keys(ships)){if(!shipSkills[id]||typeof shipSkills[id]!=="object")shipSkills[id]={};for(const k of ["hull","thrusters","reactor","weapon"])shipSkills[id][k]=Math.max(0,Math.min(5,Number(shipSkills[id][k])||0));}bestScore=p.best||0;bestWave=p.wave||1;window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){shipSkills={};for(const id of Object.keys(ships))shipSkills[id]={hull:0,thrusters:0,reactor:0,weapon:0};}}
-function saveVoidProfile(){try{const profile={version:2,savedAt:Date.now(),coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,shipSkills,best:bestScore,wave:bestWave,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
+function loadVoidProfile(){try{const p=JSON.parse(localStorage.getItem("voidSpaceProfile")||"{}");bankCoins=p.coins||0;pilotLevel=p.level||1;xpProgress=p.xp||0;xpNext=p.next||100;selectedShip=ships[p.ship]?p.ship:"striker";ownedShips=Array.isArray(p.owned)?p.owned.filter(id=>ships[id]):["striker"];if(!ownedShips.includes("striker"))ownedShips.unshift("striker");if(!ownedShips.includes(selectedShip))selectedShip="striker";shipSkills=p.shipSkills&&typeof p.shipSkills==="object"?p.shipSkills:{};for(const id of Object.keys(ships)){if(!shipSkills[id]||typeof shipSkills[id]!=="object")shipSkills[id]={};for(const k of ["hull","thrusters","reactor","weapon"])shipSkills[id][k]=Math.max(0,Math.min(5,Number(shipSkills[id][k])||0));}bestScore=p.best||0;bestWave=p.wave||1;unlockedAchievements=Array.isArray(p.achievements)?p.achievements:[];lifetimeKills=Number(p.lifetimeKills)||0;bossesDefeated=Number(p.bossesDefeated)||0;campaignWins=Number(p.campaignWins)||0;campaignProgress=p.campaignProgress&&typeof p.campaignProgress==="object"?p.campaignProgress:{};modeRecords=p.modeRecords&&typeof p.modeRecords==="object"?p.modeRecords:{};window.voidSoundEnabled=p.sound!==false;window.voidShakeEnabled=p.shake!==false;window.voidFxEnabled=p.fx!==false;}catch(e){shipSkills={};unlockedAchievements=[];for(const id of Object.keys(ships))shipSkills[id]={hull:0,thrusters:0,reactor:0,weapon:0};}}
+function saveVoidProfile(){try{const profile={version:3,savedAt:Date.now(),coins:bankCoins,level:pilotLevel,xp:xpProgress,next:xpNext,ship:selectedShip,owned:ownedShips,shipSkills,best:bestScore,wave:bestWave,achievements:unlockedAchievements,lifetimeKills,bossesDefeated,campaignWins,campaignProgress,modeRecords,sound:window.voidSoundEnabled!==false,shake:window.voidShakeEnabled!==false,fx:window.voidFxEnabled!==false};localStorage.setItem("voidSpaceProfile",JSON.stringify(profile));window.voidSaveAvailable=true;}catch(e){window.voidSaveAvailable=false;console.warn("VOID SPACE local save unavailable; check browser storage settings.",e);}}
 window.addEventListener("pagehide",saveVoidProfile);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveVoidProfile();});
 function paintMeta(){const vals={metaCoins:bankCoins,metaLevel:pilotLevel,metaBest:bestScore.toLocaleString()};for(const id in vals){const el=document.getElementById(id);if(el)el.textContent=vals[id];}}

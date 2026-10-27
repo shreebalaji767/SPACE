@@ -1,16 +1,19 @@
 # VOID SPACE 🚀
 
-A free, browser-based neon cyberpunk space-survival arcade game with a cinematic landing page and animated gameplay preview. Pilot a ship through escalating enemy waves, fight bosses, collect power-ups, build a run with upgrades, earn credits, and unlock ships.
+A free, browser-based neon cyberpunk space-survival arcade game with a premium-style landing page and a looping **prerecorded gameplay video**. Pilot a ship through escalating enemy waves, fight multi-phase bosses, open reward crates, chain kill combos, complete daily contracts, earn credits, and unlock ships.
 
 **No paid items, no ads, no external game assets, and no database required.** Player progression is stored locally in the browser.
 
 ## Features
 
-- **Cinematic landing trailer:** a separate, looping canvas animation stages ship flight, enemy swarms, multi-shot weapons, nova-bomb detonations, explosions, slow-motion effects, boss phases, upgrade callouts, and victory rewards. It does not start the actual game engine, trigger level-up menus, or change player progression. **Play Now** starts the real playable game.
+- **Recorded cinematic trailer:** the landing page plays `/static/void-space-gameplay.webm` on loop. Regular visitors do not start the game simulation, autopilot, or gameplay animation on the landing page; only the isolated `?record=1` capture workflow runs the simulation to produce the footage. **Play Now** starts real gameplay only after a deliberate click.
 - **Arcade combat:** fast fighters, tanks, ranged snipers, enemy projectiles, escalating waves, and three named boss variants.
 - **Multi-phase bosses:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health, with phase-transition slow motion, flashes, unique colors, and a live boss bar.
 - **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.
 - **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
+- **Reward crates:** enemies can drop glowing, diamond-framed crates containing free credits, hull repair, energy, weapon damage, or bomb upgrades.
+- **Kill-chain combo rewards:** consecutive eliminations within a four-second window build a combo; every five kills grants bonus credits and a neon burst.
+- **Daily contracts:** three UTC-date-based objectives — eliminate 10 hostiles, reach wave 5, and defeat a boss — award free credits and XP once per day. Progress and claims persist in localStorage.
 - **Interactive environments:** destructible asteroids drift through each run, damage the ship on contact, and can drop credits when destroyed. Campaign routes tint the hazard fields.
 - **Seven game modes:** Survival, faster-scaling Endless, Boss Rush, three-minute Time Attack, tougher Hardcore, **Daily Seed** — a reproducible challenge whose procedural enemy/hazard sequence is seeded by the UTC date — and the multi-sector Campaign.
 - **Three-sector campaign:** choose Derelict Belt, Ion Storm, or Singularity Edge; clear waves and defeat the sector boss to earn a completion bonus.
@@ -35,7 +38,7 @@ A free, browser-based neon cyberpunk space-survival arcade game with a cinematic
 
 ## Save system (no database)
 
-VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed. The existing `voidSpaceProfile` key is preserved, and older profiles migrate forward when loaded. The profile now includes achievements, lifetime kills, boss defeats, campaign completions, per-mode records, and ship skill ranks.
+VOID SPACE saves player progression directly in the browser using `localStorage` under the `voidSpaceProfile` key. It stores credits, pilot level and XP, unlocked/selected ships, per-ship permanent skill-tree ranks, best score, deepest wave, and sound/visual preferences. The profile is saved as progression changes and autosaved when the page is hidden or closed. The existing `voidSpaceProfile` key is preserved, and older profiles migrate forward when loaded. The profile includes achievements, lifetime kills, boss defeats, campaign completions, per-mode records, ship skill ranks, daily contract progress/claims, and preferences. Daily contract progress resets at UTC midnight; claimed rewards cannot be claimed again for the same UTC date.
 
 - **No database or server-side player account is used.**
 - Saves belong to that browser and site origin; they do not automatically sync between devices or browsers.
@@ -102,6 +105,7 @@ The server listens on `0.0.0.0` and uses the `PORT` environment variable when pr
 This is a small Flask application with a single main game file.
 
 - **Build/install command:** `pip install -r requirements.txt`
+- **Gameplay recording workflow:** `.github/workflows/record-gameplay.yml` captures the dedicated `/?record=1` route and updates the prerecorded trailer asset. Normal landing-page visits never use this capture mode.
 - **Start command:** `python app.py`
 - **Health check:** `/health`
 - **Recommended runtime:** Python 3.11+
@@ -112,7 +116,7 @@ For a WSGI deployment, the Flask application object is `app` in `app.py`; a plat
 
 ## Save data and privacy
 
-The game stores credits, pilot level/XP, unlocked and selected ships, per-ship skill-tree ranks, achievements, lifetime combat statistics, campaign progress, mode records, best score/wave, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`. The Save Backup / Restore screen exports and imports this profile as JSON.
+The game stores credits, pilot level/XP, unlocked and selected ships, per-ship skill-tree ranks, achievements, lifetime combat statistics, campaign progress, mode records, best score/wave, daily contract progress/claims, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`. The Save Backup / Restore screen exports and imports this profile as JSON.
 
 - Data is local to that browser and origin; it does not automatically sync across devices.
 - Clearing site data or using a different browser/profile can reset progression.
@@ -128,6 +132,8 @@ The app serves `/manifest.json`, `/icon.svg`, and `/sw.js` directly from Flask. 
 SPACE/
 ├── app.py           # Flask server + embedded HTML/CSS/JavaScript game
 ├── requirements.txt # Python dependencies
+├── static/          # Recorded gameplay video and PWA assets
+├── .github/workflows/ # Automated gameplay recording workflow
 └── README.md        # Project documentation
 ```
 

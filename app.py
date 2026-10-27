@@ -1354,6 +1354,7 @@ function resetGame(){
     player.boostCooldown = 0;
     player.bombCooldown = 0;
     player.invincible = 0;
+    player.ultimateCooldown=0;
 
     createStars();
 
@@ -1430,7 +1431,7 @@ function endGame(victory=false){
 ========================================================= */
 
 document.getElementById("startButton")
-    .addEventListener("click",startGame);
+    .addEventListener("click",()=>{currentGameMode="survival";startGame();});
 
 document.getElementById("restartButton")
     .addEventListener("click",startGame);
@@ -1570,6 +1571,7 @@ window.addEventListener("keydown",(e)=>{
         useBomb();
     }
     if(code==="KeyQ"&&!e.repeat&&running){runWeaponIndex=(runWeaponIndex+1)%weaponDefs.length;toastNotice("WEAPON SWITCHED: "+weaponDefs[runWeaponIndex].name);}
+    if(code==="KeyE"&&!e.repeat)useShipUltimate();
 
 });
 
@@ -1933,7 +1935,7 @@ function spawnEnemy(){
 
 function spawnBoss(){
     const kinds=[{name:"DREADNOUGHT",color:"#bd65ff"},{name:"VOID WRAITH",color:"#57e8ff"},{name:"NOVA COLOSSUS",color:"#ff8bca"}];
-    const kind=kinds[Math.max(0,Math.floor(wave/5)-1)%kinds.length];
+    const kindIndex=currentGameMode==="bossrush"?(wave-1)%kinds.length:Math.max(0,Math.floor(wave/5)-1)%kinds.length,kind=kinds[kindIndex];
     enemies.push({
 
         x:W/2,
@@ -1952,7 +1954,7 @@ function spawnBoss(){
 
         damage:35,
 
-        type:"boss",bossName:kind.name,bossColor:kind.color,bossKind:Math.max(0,Math.floor(wave/5)-1)%kinds.length,phase:1,
+        type:"boss",bossName:kind.name,bossColor:kind.color,bossKind:kindIndex,phase:1,
         score:1000,boss:true,fireTimer:1.8
 
     });
@@ -2295,6 +2297,7 @@ function updatePlayer(dt){
     player.bombCooldown -= dt;
 
     player.invincible -= dt;
+    player.ultimateCooldown=Math.max(0,(player.ultimateCooldown||0)-dt);
 
     /*
        ENERGY REGEN
@@ -2373,49 +2376,24 @@ function updateEnemies(dt){
         const ny = dy/dist;
 
         if(enemy.boss){
-
-            enemy.y += 20*dt;
-
-            if(enemy.y > 150){
-
-                enemy.x +=
-                    Math.sin(performance.now()/1000)
-                    * 35
-                    * dt;
-            }
-
-            enemy.fireTimer -= dt;
-
-            if(enemy.fireTimer <= 0){
-
-                enemy.fireTimer = 1.8;
-
-                for(let k=0;k<7;k++){
-
-                    const angle =
-                        Math.atan2(dy,dx) +
-                        (k-3)*.12;
-
-                    bullets.push({
-
-                        x:enemy.x,
-                        y:enemy.y,
-
-                        vx:Math.cos(angle)*260,
-                        vy:Math.sin(angle)*260,
-
-                        life:4,
-
-                        radius:5,
-
-                        enemyBullet:true
-
-                    });
+            const ratio=enemy.health/enemy.maxHealth,nextPhase=ratio<=.32?3:ratio<=.66?2:1;
+            if(nextPhase>(enemy.phase||1)){enemy.phase=nextPhase;cinematicSlow=.9;screenFlash=.55;toastNotice((enemy.bossName||"BOSS")+" PHASE "+nextPhase,enemy.bossColor||"#d7a0ff");createBurst(enemy.x,enemy.y,70,9,enemy.bossColor||"#d7a0ff");}
+            enemy.y+=((enemy.phase||1)===3?34:20)*dt;
+            if(enemy.y>150)enemy.x+=Math.sin(performance.now()/1000*(enemy.phase||1))*((enemy.phase||1)===3?90:35)*dt;
+            enemy.fireTimer-=dt;
+            if(enemy.fireTimer<=0){
+                const phase=enemy.phase||1;enemy.fireTimer=phase===1?1.8:phase===2?1.25:.82;
+                if(phase===1){
+                    for(let k=0;k<7;k++){const angle=Math.atan2(dy,dx)+(k-3)*.12;bullets.push({x:enemy.x,y:enemy.y,vx:Math.cos(angle)*260,vy:Math.sin(angle)*260,life:4,radius:5,enemyBullet:true,color:enemy.bossColor});}
+                }else if(phase===2){
+                    const count=12,offset=performance.now()/900;
+                    for(let k=0;k<count;k++){const angle=offset+k*Math.PI*2/count;bullets.push({x:enemy.x,y:enemy.y,vx:Math.cos(angle)*225,vy:Math.sin(angle)*225,life:4.5,radius:5,enemyBullet:true,color:enemy.bossColor});}
+                }else{
+                    for(let burst=0;burst<3;burst++){const aim=Math.atan2(dy,dx)+(burst-1)*.16;bullets.push({x:enemy.x,y:enemy.y,vx:Math.cos(aim)*350,vy:Math.sin(aim)*350,life:4,radius:7,enemyBullet:true,color:enemy.bossColor});}
+                    for(let k=0;k<8;k++){const angle=performance.now()/500+k*Math.PI/4;bullets.push({x:enemy.x,y:enemy.y,vx:Math.cos(angle)*185,vy:Math.sin(angle)*185,life:4.5,radius:4,enemyBullet:true,color:enemy.bossColor});}
                 }
-
                 sound(100,.15,"sawtooth",.025);
             }
-
         }else if(enemy.type==="sniper"){
             enemy.vx=nx*enemy.speed*.55;enemy.vy=ny*enemy.speed*.55;enemy.x+=enemy.vx*dt;enemy.y+=enemy.vy*dt;enemy.fireTimer-=dt;if(enemy.fireTimer<=0){enemy.fireTimer=1.4;bullets.push({x:enemy.x,y:enemy.y,vx:nx*300,vy:ny*300,life:4,radius:5,enemyBullet:true});}
         }else{
@@ -2470,7 +2448,7 @@ function updateEnemies(dt){
 
         if(enemy.health <= 0){
 
-            score+=enemy.score;kills++;awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
+            score+=enemy.score;kills++;lifetimeKills++;if(enemy.boss)bossesDefeated++;checkVoidAchievements();awardVoidCoins(enemy.boss?80:Math.max(2,Math.round(enemy.score/12)));awardVoidXP(enemy.boss?180:Math.max(8,Math.round(enemy.score/3)));
 
             createBurst(
                 enemy.x,
@@ -2678,7 +2656,8 @@ function updateWave(dt){
 
     if(
         waveTimer > (currentGameMode==="bossrush"?12:currentGameMode==="campaign"?15:18) &&
-        enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5)
+        enemies.filter(e=>!e.boss).length < (currentGameMode==="bossrush"?2:5) &&
+        (currentGameMode!=="bossrush"||!enemies.some(e=>e.boss))
     ){
 
         waveTimer = 0;
@@ -2938,15 +2917,9 @@ function drawBullets(){
 
         ctx.shadowBlur = 12;
 
-        ctx.shadowColor =
-            b.enemyBullet
-            ? "#ff4040"
-            : "#6eeaff";
+        ctx.shadowColor = b.color || (b.enemyBullet ? "#ff4040" : "#6eeaff");
 
-        ctx.fillStyle =
-            b.enemyBullet
-            ? "#ff5555"
-            : "#ffffff";
+        ctx.fillStyle = b.color || (b.enemyBullet ? "#ff5555" : "#ffffff");
 
         ctx.beginPath();
 
@@ -3387,7 +3360,7 @@ const achievementDefs=[
  {id:"ship_collector",name:"FLEET COMMANDER",desc:"Unlock every ship.",test:()=>ownedShips.length>=Object.keys(ships).length},
  {id:"campaign_clear",name:"SECTOR SAVIOR",desc:"Clear a campaign sector.",test:()=>campaignWins>=1},
  {id:"hardcore_120",name:"IRON PILOT",desc:"Survive two minutes in Hardcore.",test:()=>currentGameMode==="hardcore"&&runTime>=120},
- {id:"time_attack",name:"AGAINST THE CLOCK",desc:"Complete a Time Attack run.",test:()=>currentGameMode==="timeattack"&&runEndedByVictory}
+ {id:"time_attack",name:"AGAINST THE CLOCK",desc:"Complete a Time Attack run.",test:()=>currentGameMode==="timeattack"&&runTime>=180}
 ];
 function toastNotice(message,color="#8be2ff"){toastMessage=message;toastColor=color;toastTimer=2.8;}
 function checkVoidAchievements(){

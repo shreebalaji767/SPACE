@@ -819,7 +819,7 @@ body::before{
 .preview-lights{display:flex;gap:5px}.preview-lights i{width:6px;height:6px;border-radius:50%;background:#69769e}.preview-lights i:first-child{background:#b5a7ff}
 .preview-live{display:flex;align-items:center;gap:6px;color:#9ce8d2}.preview-live:before{content:"";width:5px;height:5px;background:#9ce8d2;border-radius:50%;box-shadow:0 0 9px #9ce8d2}
 .preview-stage{position:relative;aspect-ratio:1.28;min-height:230px;max-height:430px;background:radial-gradient(ellipse at 50% 52%,#17204a,#080c1d 65%,#050713);}
-#previewCanvas{display:block;width:100%;height:100%;position:absolute;inset:0;}
+#previewCanvas{display:block;width:100%;height:100%;position:absolute;inset:0;}#previewVideo{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:cover;background:#030712;}body.gameplay-record-mode #previewVideo{display:none;}
 .preview-hud{position:absolute;inset:13px;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start;font:9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;color:#dce5ff;text-shadow:0 1px 5px #050713;}
 .preview-chip{padding:8px 9px;border:1px solid rgba(173,190,255,.18);border-radius:8px;background:rgba(7,11,27,.72);line-height:1.9;}
 .preview-chip b{color:#a9dcf8;}
@@ -912,7 +912,7 @@ body::before{
         <div class="preview-frame" aria-label="Animated gameplay preview">
           <div class="preview-topbar"><span class="preview-lights"><i></i><i></i><i></i></span><span>ACTUAL GAMEPLAY FEED // LIVE ENGINE</span><span class="preview-live">LIVE</span></div>
           <div class="preview-stage">
-            <canvas id="previewCanvas" aria-label="Animated preview showing a starfighter fighting enemies"></canvas>
+            <video id="previewVideo" autoplay muted loop playsinline preload="auto" aria-label="Recorded VOID SPACE gameplay footage"><source src="/static/void-space-gameplay.webm" type="video/webm"></video><canvas id="previewCanvas" aria-label="Gameplay recording capture surface"></canvas>
             <div class="preview-hud"><div class="preview-chip">SCORE <b id="previewScore">00000</b><br>WAVE <b id="previewWave">01</b><br>WEAPON <b id="previewWeapon">PULSE</b></div><div class="preview-chip" style="text-align:right">HULL <b id="previewHull">100%</b><br>ENERGY <b id="previewEnergy">100%</b><br>THREAT <b id="previewThreat" style="color:#f2b9e8">SCANNING</b></div></div>
             <div class="preview-boss">NOVA COLOSSUS<div class="preview-boss-bar"><span></span></div></div>
           </div>
@@ -3576,16 +3576,16 @@ window.addEventListener("error",(event)=>{
 
 
 
-/* LANDING PAGE ACTIONS + AUTHENTIC GAMEPLAY PREVIEW
-   Mirrors the real game canvas into the landing-page frame. The same game
-   engine runs in isolated showcase mode, with autoplay controls and no saved
-   progression, so the landing preview shows actual enemies, weapons, bombs,
-   collisions, bosses and effects rather than separately invented animation. */
+/* LANDING PAGE ACTIONS + RECORDED GAMEPLAY PREVIEW
+   Visitors see a prerecorded capture of the real game. The simulation is only
+   started in the dedicated capture mode used by the repository workflow. */
 document.getElementById("landingPlayButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();currentGameMode="survival";startGame(false);});
 document.getElementById("landingMenuButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("menuScreen");});
 document.getElementById("landingHowButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("howScreen");});
 document.getElementById("landingModesButton").addEventListener("click",()=>{window.stopVoidLandingShowcase?.();showScreen("modeScreen");});
 (function initLandingPreview(){
+ const recordMode=new URLSearchParams(window.location.search).get("record")==="1";
+ if(recordMode)document.body.classList.add("gameplay-record-mode");
  const preview=document.getElementById("previewCanvas"),gameCanvas=document.getElementById("game");
  if(!preview||!gameCanvas)return;
  const ctx=preview.getContext("2d",{alpha:false}),frame=preview.closest(".preview-frame");
@@ -3632,7 +3632,7 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
  function draw(now){
    const dt=Math.min(.05,(now-(last||now))/1000);last=now;
    if(document.getElementById("landingScreen").classList.contains("active")){
-     if(!active)start();
+     if(recordMode&&!active)start();
      if(active&&landingShowcaseMode&&running){
        autoplay(dt);
        try{ctx.drawImage(gameCanvas,0,0,gameCanvas.width,gameCanvas.height,0,0,w,h);}catch(e){}

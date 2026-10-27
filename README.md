@@ -6,7 +6,7 @@ A free, browser-based neon cyberpunk space-survival arcade game with a cinematic
 
 ## Features
 
-- **Cinematic landing page:** responsive hero screen with an auto-playing preview mirrored from the actual game canvas. The showcase runs the production game simulation with autopilot movement and real weapon firing, projectiles, enemies, particles, and combat effects; Play Now starts a normal playable run.
+- **Cinematic landing page:** responsive hero screen with an auto-playing preview mirrored from the actual game canvas. The showcase runs the production game simulation with autopilot movement and real weapon firing, projectiles, enemies, particles, and combat effects. Showcase mode suppresses rewards, achievements, lifetime stats, records, and saved progression; leaving the landing page stops the autopilot. **Play Now** starts a normal, progression-enabled run.
 - **Arcade combat:** fast fighters, tanks, ranged snipers, enemy projectiles, escalating waves, and three named boss variants.
 - **Multi-phase bosses:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health, with phase-transition slow motion, flashes, unique colors, and a live boss bar.
 - **Six weapon families:** Pulse, homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity/black-hole shots. Weapon pickups level up and cycle the arsenal; press **Q** to switch.

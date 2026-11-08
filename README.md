@@ -2,7 +2,6 @@
 
 A free, browser-based space-survival arcade game with a cinematic landing page, optional Three.js 3D scene, and a looping **prerecorded gameplay video**. Pilot a ship through escalating enemy waves, fight multi-phase bosses, open reward crates, chain kill combos, complete daily contracts, earn credits, and unlock ships.
 
-<text></text>
 **[▶ PLAY VOID SPACE — LIVE](https://void-space-3d.onrender.com/)**
 
 **No paid items, no ads, no external game assets, and no database required.** Player progression is stored locally in the browser.

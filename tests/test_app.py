@@ -12,12 +12,23 @@ class VoidSpaceSmokeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"VOID SPACE", response.data)
         self.assertIn(b"/static/void-expansion.js", response.data)
+        self.assertIn(b"/static/void-universe.js", response.data)
+        self.assertIn(b"/static/void-responsive.css", response.data)
 
     def test_expansion_asset_is_served(self):
         response = self.client.get("/static/void-expansion.js")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"VOID COMMAND DECK", response.data)
         self.assertIn(b"mothership", response.data)
+
+    def test_universe_assets(self):
+        js = self.client.get("/static/void-universe.js")
+        css = self.client.get("/static/void-responsive.css")
+        self.assertEqual(js.status_code, 200)
+        self.assertIn(b"GALACTIC COMMAND", js.data)
+        self.assertIn(b"voidSpaceUniverse", js.data)
+        self.assertEqual(css.status_code, 200)
+        self.assertIn(b"100dvh", css.data)
 
     def test_pwa_endpoints(self):
         self.assertEqual(self.client.get("/manifest.json").status_code, 200)

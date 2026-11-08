@@ -38,6 +38,7 @@ function advancedHooks(){
  if(typeof window.spawnEnemy==="function"&&!window.spawnEnemy.__ved2){var sp=window.spawnEnemy,sf2=function(){sp();try{var e=enemies[enemies.length-1];if(!e)return;if(window.voidOperation==="invasion"){e.health*=1.25;e.maxHealth=e.health;e.speed*=1.12;e.score+=25;}if(window.voidOperation==="convoy"){e.speed*=1.08;} }catch(x){}};sf2.__ved2=true;window.spawnEnemy=sf2;}
  if(typeof window.endGame==="function"&&!window.endGame.__ved2){var ec=window.endGame,ef2=function(v){if(v&&window.voidOperation==="mothership")d.mothershipWins=(Number(d.mothershipWins)||0)+1;ec(v);};ef2.__ved2=true;window.endGame=ef2;}
 }
-function init(){buttons();hooks();advancedHooks();new MutationObserver(function(){buttons();hooks();advancedHooks();}).observe(document.body,{childList:true,subtree:true});}
+function addShips(){try{if(typeof ships==="undefined")return;ships.sentinel={name:"AEGIS SENTINEL",cost:1450,hp:145,speed:.9,damage:1.18,desc:"Defensive escort craft with a reinforced hull"};ships.rift={name:"RIFT RUNNER",cost:1750,hp:92,speed:1.42,damage:1.24,desc:"High-speed flanker built for aggressive pilots"};if(typeof loadVoidProfile==="function")loadVoidProfile();if(typeof renderVoidHangar==="function")renderVoidHangar();if(typeof renderVoidSkillTree==="function")renderVoidSkillTree();if(typeof paintMeta==="function")paintMeta();}catch(e){console.warn("Expansion ship catalog could not initialize",e);}}
+function init(){addShips();buttons();hooks();advancedHooks();new MutationObserver(function(){buttons();hooks();advancedHooks();}).observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();

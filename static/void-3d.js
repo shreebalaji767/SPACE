@@ -342,8 +342,7 @@
     observer.observe(screen, { attributes: true, attributeFilter: ["class"] });
   });
   updateToggle();
-  if (!reducedMotion && !lowPower) init();
-  else if (enabled) init();
+  init();
   window.addEventListener("pagehide", function () {
     disposed = true;
     stop();

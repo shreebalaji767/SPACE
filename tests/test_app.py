@@ -13,6 +13,8 @@ class VoidSpaceSmokeTests(unittest.TestCase):
         self.assertIn(b"VOID SPACE", response.data)
         self.assertIn(b"/static/void-expansion.js", response.data)
         self.assertIn(b"/static/void-universe.js", response.data)
+        self.assertIn(b"/static/void-3d.js", response.data)
+        self.assertIn(b"threeSceneToggle", response.data)
         self.assertIn(b"/static/void-responsive.css", response.data)
 
     def test_expansion_asset_is_served(self):
@@ -30,13 +32,22 @@ class VoidSpaceSmokeTests(unittest.TestCase):
         self.assertEqual(css.status_code, 200)
         self.assertIn(b"100dvh", css.data)
 
+    def test_three_scene_asset(self):
+        response = self.client.get("/static/void-3d.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"three.module.js", response.data)
+        self.assertIn(b"WebGLRenderer", response.data)
+        self.assertIn(b"voidSpace3DEnabled", response.data)
+
     def test_pwa_endpoints(self):
         self.assertEqual(self.client.get("/manifest.json").status_code, 200)
         self.assertEqual(self.client.get("/icon.svg").status_code, 200)
         sw = self.client.get("/sw.js")
         self.assertEqual(sw.status_code, 200)
-        self.assertIn(b"void-space-v16", sw.data)
+        self.assertIn(b"void-space-v17", sw.data)
         self.assertIn(b"/static/void-universe.js", sw.data)
+        self.assertIn(b"/static/void-3d.js", sw.data)
+        self.assertIn(b"three.core.js", sw.data)
         self.assertIn(b"/static/void-responsive.css", sw.data)
 
     def test_health_endpoint(self):

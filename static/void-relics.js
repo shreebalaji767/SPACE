@@ -1,0 +1,67 @@
+/* VOID SPACE — Rift Relics. Separate local progression; no accounts, APIs or paid services. */
+(function () {
+  "use strict";
+  const KEY = "voidSpaceRelics";
+  const MAX_SHARDS = 999999;
+  const RELICS = [
+    {id:"aegis",name:"AEGIS HEART",icon:"⬡",desc:"Reinforced starting hull.",effect:"+8 starting hull per rank",costs:[8,12,18,25,34],apply:p=>{p.maxHealth+=8;p.health=Math.min(p.maxHealth,p.health+8);}},
+    {id:"nova",name:"NOVA LENS",icon:"✦",desc:"Focuses the ship's weapon emitters.",effect:"+4% weapon damage per rank",costs:[10,15,21,29,38],apply:p=>{p.shipDamage*=1.04;}},
+    {id:"flux",name:"FLUX COIL",icon:"⌁",desc:"Improves thrust response and handling.",effect:"+3% ship speed per rank",costs:[9,14,20,27,36],apply:p=>{p.shipSpeed*=1.03;}},
+    {id:"reactor",name:"STARCORE",icon:"◉",desc:"Expands the starting energy reserve.",effect:"+7 starting energy per rank",costs:[8,13,19,26,35],apply:p=>{p.maxEnergy+=7;p.energy=Math.min(p.maxEnergy,p.energy+7);}},
+    {id:"ward",name:"PHASE WARD",icon:"◇",desc:"Adds a protective charge at launch.",effect:"+1 starting shield charge per rank",costs:[12,18,25,33,42],apply:()=>{if(typeof runUpgrades!=="undefined")runUpgrades.shield=Math.min(9,(Number(runUpgrades.shield)||0)+1);}}
+  ];
+  const BASE={version:1,shards:0,ranks:{aegis:0,nova:0,flux:0,reactor:0,ward:0},discoveries:0};
+  let state=load(),root=null,pickup=null,spawnClock=0,pulse=0;
+  function int(v,min,max){const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.floor(n))):min;}
+  function normalize(v){v=v&&typeof v==="object"?v:{};const r={...BASE,ranks:{}};r.shards=int(v.shards,0,MAX_SHARDS);r.discoveries=int(v.discoveries,0,100000000);for(const x of RELICS)r.ranks[x.id]=int(v.ranks&&v.ranks[x.id],0,x.costs.length);return r;}
+  function load(){try{return normalize(JSON.parse(localStorage.getItem(KEY)||"null"));}catch(_){return normalize(BASE);}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));const n=document.getElementById("vrStatus");if(n)n.textContent="RELIC DATA SAVED ON THIS DEVICE";return true;}catch(_){const n=document.getElementById("vrStatus");if(n)n.textContent="SAVE BLOCKED — EXPORT A BACKUP";return false;}}
+  function build(){
+    if(root)return;
+    const style=document.createElement("style");
+    style.textContent=\`
+      #voidRelics{display:none;position:fixed;inset:0;z-index:1200;place-items:center;padding:clamp(8px,2vw,22px);background:rgba(2,5,16,.9);backdrop-filter:blur(16px)}
+      #voidRelics.open{display:grid}.vr-shell{width:min(980px,100%);max-height:min(900px,94dvh);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid #91baff45;border-radius:20px;background:linear-gradient(145deg,#172143,#080d20);color:#edf3ff;box-shadow:0 24px 90px #000b}
+      .vr-head,.vr-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:clamp(12px,2vw,20px);border-bottom:1px solid #aebcff20}.vr-head h2{font-size:clamp(16px,2vw,22px);letter-spacing:.1em}
+      .vr-copy{font-size:12px;line-height:1.6;color:#aebddb;margin-top:6px}.vr-body{overflow:auto;overscroll-behavior:contain;padding:clamp(12px,2vw,20px)}
+      .vr-wallet{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;margin-bottom:14px;border:1px solid #a7a1ff45;border-radius:13px;background:#9b9cf415;color:#d9d7ff;font-size:12px}
+      .vr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr));gap:12px}.vr-card{min-width:0;padding:15px;border:1px solid #aebcff28;border-radius:14px;background:#ffffff08}
+      .vr-card h3{font-size:12px;letter-spacing:.08em;color:#c8d8ff}.vr-card p{font-size:12px;line-height:1.55;color:#b9c6e0;margin:8px 0}.vr-card small{display:block;color:#9ce8d2;font-size:11px;line-height:1.5;margin:8px 0}
+      .vr-rank{height:6px;overflow:hidden;border-radius:9px;background:#ffffff18;margin:10px 0}.vr-rank i{display:block;height:100%;background:linear-gradient(90deg,#9b9cf4,#9ce8d2)}
+      .vr-card button,.vr-head button,.vr-foot button{min-height:42px;padding:9px 12px;font-size:10px}.vr-card button{width:100%}.vr-card button:disabled{opacity:.45;cursor:not-allowed}
+      .vr-foot{border-top:1px solid #aebcff20;border-bottom:0;color:#aebddb;font-size:11px}#vrRunTag{display:none;position:fixed;z-index:14;left:50%;top:max(105px,calc(env(safe-area-inset-top) + 90px));transform:translateX(-50%);padding:7px 12px;border:1px solid #b49cff88;border-radius:99px;background:#100e28e8;color:#e3d8ff;font-size:10px;letter-spacing:.1em;pointer-events:none}
+      @media(max-width:620px){#voidRelics{padding:0;align-items:stretch}.vr-shell{width:100%;height:100dvh;max-height:100dvh;border-radius:0;border:0}.vr-head{padding-top:max(12px,env(safe-area-inset-top))}.vr-foot{padding-bottom:max(10px,env(safe-area-inset-bottom))}.vr-grid{grid-template-columns:1fr}}
+      @media(max-height:480px) and (orientation:landscape){.vr-shell{height:100dvh}.vr-body{padding:10px}.vr-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vr-card{padding:10px}}
+      @media(prefers-reduced-motion:reduce){#voidRelics *{animation:none!important;transition:none!important}}
+    \`;
+    document.head.appendChild(style);
+    root=document.createElement("div");root.id="voidRelics";
+    root.innerHTML='<section class="vr-shell" role="dialog" aria-modal="true" aria-labelledby="vrTitle"><header class="vr-head"><div><h2 id="vrTitle">RIFT RELIC FORGE</h2><p class="vr-copy">Recover fragments from unstable rifts. Forge permanent ship enhancements.</p></div><button id="vrClose" aria-label="Close relic forge">✕</button></header><main class="vr-body" id="vrContent"></main><footer class="vr-foot"><span id="vrStatus" aria-live="polite">All relic progress stays on this device.</span><button id="vrExport">EXPORT BACKUP</button></footer></section>';
+    document.body.appendChild(root);
+    const tag=document.createElement("div");tag.id="vrRunTag";tag.textContent="RIFT SHARD DETECTED";document.body.appendChild(tag);
+    root.querySelector("#vrClose").addEventListener("click",close);root.querySelector("#vrExport").addEventListener("click",exportBackup);
+    root.addEventListener("click",e=>{if(e.target===root)close();});
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&root.classList.contains("open")){e.preventDefault();e.stopImmediatePropagation();close();}},true);
+  }
+  function open(){build();render();root.classList.add("open");}
+  function close(){if(root)root.classList.remove("open");}
+  function render(){
+    if(!root)return;const host=root.querySelector("#vrContent");
+    const cards=RELICS.map(r=>{const rank=state.ranks[r.id],cost=r.costs[rank],full=rank>=r.costs.length;return '<article class="vr-card"><h3>'+r.icon+" "+r.name+'</h3><p>'+r.desc+'</p><small>'+r.effect+'</small><div class="vr-rank"><i style="width:'+(rank/r.costs.length*100)+'%"></i></div><small>RANK '+rank+"/"+r.costs.length+(full?" · MASTERED":" · NEXT COST "+cost+" SHARDS")+'</small><button data-forge="'+r.id+'" '+(full||state.shards<cost?"disabled":"")+'>'+(full?"MAX RANK":"FORGE UPGRADE · "+cost+" SHARDS")+'</button></article>';}).join("");
+    host.innerHTML='<div class="vr-wallet"><span>✧ RIFT SHARDS: <strong>'+state.shards.toLocaleString()+'</strong></span><span>RELICS DISCOVERED: '+state.discoveries.toLocaleString()+'</span></div><div class="vr-grid">'+cards+'</div><p class="vr-copy" style="margin-top:14px">Relics appear during active combat, not on menus or the landing page. Fly close to collect a shard cache. Forge ranks apply once when a new run begins.</p><label class="vr-copy" for="vrImport" style="display:block;margin-top:12px">RESTORE RELIC BACKUP · JSON</label><input id="vrImport" type="file" accept=".json,application/json" style="width:100%;margin-top:6px;color:#cbd7f2"><button id="vrRestore" style="margin-top:8px;min-height:40px;padding:8px 12px;font-size:10px">RESTORE SELECTED BACKUP</button>';
+    host.querySelectorAll("[data-forge]").forEach(b=>b.addEventListener("click",()=>forge(b.dataset.forge)));host.querySelector("#vrRestore").addEventListener("click",importBackup);
+  }
+  function forge(id){const r=RELICS.find(x=>x.id===id);if(!r)return;const rank=state.ranks[id],cost=r.costs[rank];if(rank>=r.costs.length||state.shards<cost)return;state.shards-=cost;state.ranks[id]=rank+1;if(save())render();}
+  function exportBackup(){try{const blob=new Blob([JSON.stringify({format:"void-space-relics",version:1,relics:state},null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="void-space-relics-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);root.querySelector("#vrStatus").textContent="RELIC BACKUP EXPORTED";}catch(_){root.querySelector("#vrStatus").textContent="BACKUP EXPORT FAILED";}}
+  function importBackup(){const input=root.querySelector("#vrImport"),file=input&&input.files&&input.files[0];if(!file){root.querySelector("#vrStatus").textContent="SELECT A BACKUP FILE FIRST";return;}if(file.size>1000000){root.querySelector("#vrStatus").textContent="BACKUP TOO LARGE";return;}const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(String(reader.result||""));if(!p||p.format!=="void-space-relics"||p.version!==1||!p.relics)throw new Error("Unsupported backup format");state=normalize(p.relics);if(!save())throw new Error("Browser storage is unavailable");render();root.querySelector("#vrStatus").textContent="RELIC BACKUP RESTORED";}catch(e){root.querySelector("#vrStatus").textContent="RESTORE REJECTED · "+e.message;}};reader.onerror=()=>{root.querySelector("#vrStatus").textContent="BACKUP FILE COULD NOT BE READ";};reader.readAsText(file);}
+  function spawnPickup(){if(pickup||typeof player==="undefined"||!player||typeof W==="undefined"||typeof H==="undefined")return;const m=55;pickup={x:m+Math.random()*Math.max(1,W-m*2),y:m+Math.random()*Math.max(1,H-m*2),radius:17,spin:Math.random()*6.28,value:2+Math.floor(Math.random()*3),life:24};}
+  function collectPickup(){if(!pickup)return;const value=pickup.value,x=pickup.x,y=pickup.y;state.shards=int(state.shards+value,0,MAX_SHARDS);state.discoveries=int(state.discoveries+1,0,100000000);pickup=null;spawnClock=0;save();if(typeof createBurst==="function")createBurst(x,y,26,6,"#c4a4ff");if(typeof toastNotice==="function")toastNotice("RIFT CACHE RECOVERED · +"+value+" SHARDS","#c4a4ff");const tag=document.getElementById("vrRunTag");if(tag){tag.textContent="RIFT CACHE SECURED · +"+value+" SHARDS";tag.style.display="block";window.setTimeout(()=>{tag.style.display="none";},1800);}}
+  function installHooks(){
+    if(typeof window.startGame==="function"&&!window.startGame.__vr){const old=window.startGame,fn=function(showcase){const result=old.apply(this,arguments);try{if(!showcase&&typeof running!=="undefined"&&running&&typeof player!=="undefined"){for(const r of RELICS){for(let i=0;i<state.ranks[r.id];i++)r.apply(player);}pickup=null;spawnClock=0;const tag=document.getElementById("vrRunTag");if(tag)tag.style.display="none";}}catch(e){console.warn("Rift relic bonuses skipped",e);}return result;};fn.__vr=true;window.startGame=fn;}
+    if(typeof window.update==="function"&&!window.update.__vr){const old=window.update,fn=function(dt){old.apply(this,arguments);try{if(!running||paused||landingShowcaseMode||typeof player==="undefined")return;const d=Math.min(.05,Math.max(0,Number(dt)||0));pulse+=d*2.8;if(!pickup){spawnClock+=d;if(spawnClock>=27)spawnPickup();}else{pickup.life-=d;pickup.spin+=d*2.2;if(pickup.life<=0){pickup=null;spawnClock=0;}else if(Math.hypot(player.x-pickup.x,player.y-pickup.y)<(Number(player.radius)||18)+pickup.radius+4)collectPickup();}}catch(_){}};fn.__vr=true;window.update=fn;}
+    if(typeof window.draw==="function"&&!window.draw.__vr){const old=window.draw,fn=function(){old.apply(this,arguments);try{if(!pickup||!running||landingShowcaseMode||typeof ctx==="undefined")return;ctx.save();ctx.translate(pickup.x,pickup.y);ctx.rotate(pickup.spin);ctx.shadowBlur=20+Math.sin(pulse)*5;ctx.shadowColor="#c4a4ff";ctx.strokeStyle="#e3d5ff";ctx.fillStyle="rgba(155,125,255,.28)";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(0,-pickup.radius);ctx.lineTo(pickup.radius,0);ctx.lineTo(0,pickup.radius);ctx.lineTo(-pickup.radius,0);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,4+Math.sin(pulse)*1.2,0,Math.PI*2);ctx.fill();ctx.restore();}catch(_){}};fn.__vr=true;window.draw=fn;}
+  }
+  function addButtons(){const menus=document.querySelector(".menu-buttons");if(menus&&!document.getElementById("voidRelicsOpen")){const b=document.createElement("button");b.id="voidRelicsOpen";b.textContent="RIFT RELIC FORGE";b.addEventListener("click",open);const anchor=document.getElementById("voidUniverseOpen")||document.getElementById("startButton");menus.insertBefore(b,anchor?anchor.nextSibling:null);}const landing=document.querySelector(".landing-nav-actions");if(landing&&!document.getElementById("voidRelicsLanding")){const b=document.createElement("button");b.id="voidRelicsLanding";b.textContent="RELIC FORGE";b.addEventListener("click",open);landing.appendChild(b);}}
+  function init(){build();addButtons();installHooks();const observer=new MutationObserver(()=>{addButtons();installHooks();});observer.observe(document.body,{childList:true,subtree:true});}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();

@@ -20,6 +20,6 @@ jobs:
       - name: Compile Python
         run: python -m py_compile app.py
       - name: Check expansion JavaScript syntax
-        run: node --check static/void-expansion.js && node --check static/void-universe.js
+        run: node --check static/void-expansion.js && node --check static/void-universe.js && node --check static/void-3d.js
       - name: Run Flask smoke tests
         run: python -m unittest discover -s tests -v

@@ -21,5 +21,7 @@ jobs:
         run: python -m py_compile app.py
       - name: Check expansion JavaScript syntax
         run: node --check static/void-expansion.js
+      - name: Check expansion JavaScript syntax
+        run: node --check static/void-expansion.js && node --check static/void-universe.js
       - name: Run Flask smoke tests
         run: python -m unittest discover -s tests -v

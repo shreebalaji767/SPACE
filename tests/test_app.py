@@ -14,6 +14,7 @@ class VoidSpaceSmokeTests(unittest.TestCase):
         self.assertIn(b"/static/void-expansion.js", response.data)
         self.assertIn(b"/static/void-universe.js", response.data)
         self.assertIn(b"/static/void-3d.js", response.data)
+        self.assertIn(b"/static/void-relics.js", response.data)
         self.assertIn(b"threeSceneToggle", response.data)
         self.assertIn(b"/static/void-responsive.css", response.data)
 
@@ -32,6 +33,13 @@ class VoidSpaceSmokeTests(unittest.TestCase):
         self.assertEqual(css.status_code, 200)
         self.assertIn(b"100dvh", css.data)
 
+    def test_rift_relic_asset(self):
+        response = self.client.get("/static/void-relics.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"RIFT RELIC FORGE", response.data)
+        self.assertIn(b"voidSpaceRelics", response.data)
+        self.assertIn(b"RIFT CACHE RECOVERED", response.data)
+
     def test_three_scene_asset(self):
         response = self.client.get("/static/void-3d.js")
         self.assertEqual(response.status_code, 200)
@@ -44,9 +52,10 @@ class VoidSpaceSmokeTests(unittest.TestCase):
         self.assertEqual(self.client.get("/icon.svg").status_code, 200)
         sw = self.client.get("/sw.js")
         self.assertEqual(sw.status_code, 200)
-        self.assertIn(b"void-space-v17", sw.data)
+        self.assertIn(b"void-space-v18", sw.data)
         self.assertIn(b"/static/void-universe.js", sw.data)
         self.assertIn(b"/static/void-3d.js", sw.data)
+        self.assertIn(b"/static/void-relics.js", sw.data)
         self.assertIn(b"three.core.js", sw.data)
         self.assertIn(b"/static/void-responsive.css", sw.data)
 

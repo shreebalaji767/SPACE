@@ -4096,10 +4096,6 @@ self.addEventListener("activate", event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))));
   self.clients.claim();
 });
-const THREE_ASSETS = [
-  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js"
-];
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const requestUrl = new URL(event.request.url);

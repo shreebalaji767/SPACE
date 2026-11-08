@@ -129,6 +129,25 @@ The **VOID COMMAND DECK** adds an optional expansion layer without replacing the
 
 Expansion data is stored separately in `localStorage` under `voidSpaceExpansion`. The original `voidSpaceProfile` key and its existing migration path are preserved. All progression remains local to the browser; no account, database, paid service, ad network, or external gameplay API is introduced.
 
+
+## Galactic Command expansion
+
+The **Galactic Command** hub adds a second, local-only layer to the existing game:
+
+- **Galaxy map:** select the Derelict Belt, Ion Storm, or Singularity Edge as the active operation sector.
+- **Fleet roster:** recruit up to three support fighters, choose Intercept / Guard / Support orders, and receive companion fire during active runs.
+- **Space station:** upgrade Hull Foundry, Reactor Core, Armory Matrix, and Ion Thrusters. Upgrades are applied once after the original game resets the ship for a new run.
+- **Galactic War:** choose Aurora Syndicate, Outer Rim Nomads, or Eclipse Collective; completed missions and victories build faction influence and sector control.
+- **Mission board:** five repeatable mission types track kills, waves, survival time, and boss victories, paying local credits and materials.
+- **Run chronicle:** stores the latest 12 runs locally and lets you replay the last mode/sector setup. It does not claim to be a video replay.
+- **Materials:** alloy, crystal, and data are earned through mission and victory rewards and used by station upgrades.
+
+Universe data is stored separately under `voidSpaceUniverse`. It does not replace the existing `voidSpaceProfile` or the first expansion's `voidSpaceExpansion` data.
+
+## Responsive layout hardening
+
+The additional responsive stylesheet uses dynamic viewport sizing, safe-area insets, content-aware panels, auto-fitting card grids, compact-phone and short-landscape layouts, touch-sized controls, keyboard focus indicators, and reduced-motion handling. The new universe UI follows the same responsive rules. The service worker pre-caches the expansion scripts and stylesheet for offline use after the first successful load.
+
 ## Automated checks
 
 GitHub Actions runs a Python compile check and Flask smoke tests on pushes and pull requests. The tests verify the game route, expansion asset, PWA endpoints, and health endpoint. Browser gameplay and touch-device testing should still be performed after major gameplay changes.

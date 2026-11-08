@@ -207,7 +207,8 @@
     camera.updateProjectionMatrix();
     if (planet && ship) {
       planet.parent.position.set(width < 520 ? -2.1 : -5.2, width < 520 ? 3.1 : 1.45, -5.4);
-      ship.position.set(width < 520 ? 1.5 : 3.4, width < 520 ? -3.0 : -2.15, 1.2);
+      shipBaseY = width < 520 ? -3.0 : -2.15;
+      ship.position.set(width < 520 ? 1.5 : 3.4, shipBaseY, 1.2);
       ship.scale.setScalar(width < 520 ? 0.78 : 1);
     }
     drawStatic();
@@ -237,7 +238,7 @@
       }
     }
     if (ship) {
-      ship.position.y += Math.sin(elapsed * 0.8) * 0.0018;
+      ship.position.y = shipBaseY + Math.sin(elapsed * 0.8) * 0.22;
       ship.rotation.z = Math.sin(elapsed * 0.22) * 0.055;
       ship.rotation.y = Math.sin(elapsed * 0.16) * 0.09;
     }
@@ -254,6 +255,7 @@
 
   function start() {
     if (running || !renderer || !visibleScreen()) return;
+    renderer.domElement.style.display = "block";
     running = true;
     clock.start();
     if (shouldAnimate()) {
@@ -264,8 +266,10 @@
   }
 
   function stop() {
+    if (!running && renderer) renderer.domElement.style.display = "none";
     if (!running) return;
     running = false;
+    if (renderer) renderer.domElement.style.display = "none";
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
   }
@@ -278,7 +282,7 @@
   }
 
   async function init() {
-    if (!enabled || recordMode || !document.body) return;
+    if (recordMode || !document.body) return;
     try {
       const THREE = await import(MODULE_URL);
       if (disposed || !document.body) return;

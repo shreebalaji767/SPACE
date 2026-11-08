@@ -89,11 +89,17 @@ async def main():
         fleet = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceUniverse")).fleet')
         if fleet != 1:
             failures.append(f"Fleet recruitment did not persist: fleet={fleet}")
+        wallet_after_recruit = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceProfile")).coins')
+        if wallet_after_recruit != 4750:
+            failures.append(f"Recruitment credit charge incorrect: {wallet_after_recruit}")
         await page.locator('[data-vtab="station"]').click()
         await page.locator('[data-action="module:hull"]').click()
         hull_rank = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceUniverse")).stations.hull')
         if hull_rank != 1:
             failures.append(f"Station upgrade did not persist: hull rank={hull_rank}")
+        wallet_after_upgrade = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceProfile")).coins')
+        if wallet_after_upgrade != 4530:
+            failures.append(f"Station credit charge incorrect: {wallet_after_upgrade}")
         await page.locator('[data-vtab="war"]').click()
         await page.locator('[data-action="faction:eclipse"]').click()
         faction = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceUniverse")).faction')

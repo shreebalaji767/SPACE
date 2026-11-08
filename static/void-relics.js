@@ -19,7 +19,7 @@
   function build(){
     if(root)return;
     const style=document.createElement("style");
-    style.textContent=\`
+    style.textContent=`
       #voidRelics{display:none;position:fixed;inset:0;z-index:1200;place-items:center;padding:clamp(8px,2vw,22px);background:rgba(2,5,16,.9);backdrop-filter:blur(16px)}
       #voidRelics.open{display:grid}.vr-shell{width:min(980px,100%);max-height:min(900px,94dvh);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid #91baff45;border-radius:20px;background:linear-gradient(145deg,#172143,#080d20);color:#edf3ff;box-shadow:0 24px 90px #000b}
       .vr-head,.vr-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:clamp(12px,2vw,20px);border-bottom:1px solid #aebcff20}.vr-head h2{font-size:clamp(16px,2vw,22px);letter-spacing:.1em}
@@ -33,7 +33,7 @@
       @media(max-width:620px){#voidRelics{padding:0;align-items:stretch}.vr-shell{width:100%;height:100dvh;max-height:100dvh;border-radius:0;border:0}.vr-head{padding-top:max(12px,env(safe-area-inset-top))}.vr-foot{padding-bottom:max(10px,env(safe-area-inset-bottom))}.vr-grid{grid-template-columns:1fr}}
       @media(max-height:480px) and (orientation:landscape){.vr-shell{height:100dvh}.vr-body{padding:10px}.vr-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vr-card{padding:10px}}
       @media(prefers-reduced-motion:reduce){#voidRelics *{animation:none!important;transition:none!important}}
-    \`;
+    `;
     document.head.appendChild(style);
     root=document.createElement("div");root.id="voidRelics";
     root.innerHTML='<section class="vr-shell" role="dialog" aria-modal="true" aria-labelledby="vrTitle"><header class="vr-head"><div><h2 id="vrTitle">RIFT RELIC FORGE</h2><p class="vr-copy">Recover fragments from unstable rifts. Forge permanent ship enhancements.</p></div><button id="vrClose" aria-label="Close relic forge">✕</button></header><main class="vr-body" id="vrContent"></main><footer class="vr-foot"><span id="vrStatus" aria-live="polite">All relic progress stays on this device.</span><button id="vrExport">EXPORT BACKUP</button></footer></section>';

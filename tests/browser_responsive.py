@@ -70,6 +70,48 @@ async def main():
                 failures.append(f"{width}x{height}: uncaught browser errors: {page_errors}")
             print(f"PASS {width}x{height} touch={touch} metrics={metrics} controls={controls}")
             await context.close()
+        # Exercise persistent economy, fleet recruitment, station upgrades and mission launch.
+        context = await browser.new_context(
+            viewport={"width": 390, "height": 844},
+            is_mobile=True,
+            has_touch=True,
+            device_scale_factor=1,
+        )
+        await context.add_init_script("""() => {
+            localStorage.setItem("voidSpaceProfile", JSON.stringify({coins: 5000}));
+            localStorage.setItem("voidSpaceUniverse", JSON.stringify({
+                resources: {alloy: 100, crystal: 100, data: 100}
+            }));
+        }""")
+        page = await context.new_page()
+        page_errors = []
+        page.on("pageerror", lambda error: page_errors.append(str(error)))
+        await page.goto(BASE, wait_until="domcontentloaded")
+        await page.locator("#voidUniverseLanding").click()
+        await page.locator('[data-vtab="fleet"]').click()
+        await page.locator('[data-action="recruit"]').click()
+        fleet = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceUniverse")).fleet')
+        if fleet != 1:
+            failures.append(f"Fleet recruitment did not persist: fleet={fleet}")
+        await page.locator('[data-vtab="station"]').click()
+        await page.locator('[data-action="module:hull"]').click()
+        hull_rank = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceUniverse")).stations.hull')
+        if hull_rank != 1:
+            failures.append(f"Station upgrade did not persist: hull rank={hull_rank}")
+        await page.locator('[data-vtab="war"]').click()
+        await page.locator('[data-action="faction:eclipse"]').click()
+        faction = await page.evaluate('JSON.parse(localStorage.getItem("voidSpaceUniverse")).faction')
+        if faction != "eclipse":
+            failures.append(f"Faction selection did not persist: faction={faction}")
+        await page.locator('[data-vtab="missions"]').click()
+        await page.locator('[data-action="mission:salvage"]').click()
+        tag = await page.locator("#vuRunTag").inner_text()
+        if "SALVAGE SWEEP" not in tag:
+            failures.append(f"Mission launch did not activate the objective tag: {tag!r}")
+        if page_errors:
+            failures.append(f"Universe interaction browser errors: {page_errors}")
+        print("PASS persistent fleet recruitment, station upgrade, faction selection and mission launch")
+        await context.close()
         await browser.close()
         if failures:
             raise SystemExit("\\n".join(failures))

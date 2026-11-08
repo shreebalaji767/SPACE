@@ -146,7 +146,7 @@ Universe data is stored separately under `voidSpaceUniverse`. It does not replac
 
 ## Responsive layout hardening
 
-The additional responsive stylesheet uses dynamic viewport sizing, safe-area insets, content-aware panels, auto-fitting card grids, compact-phone and short-landscape layouts, touch-sized controls, keyboard focus indicators, and reduced-motion handling. The new universe UI follows the same responsive rules. The service worker pre-caches the expansion scripts and stylesheet for offline use after the first successful load.
+The additional responsive stylesheet uses dynamic viewport sizing, safe-area insets, content-aware panels, auto-fitting card grids, compact-phone and short-landscape layouts, touch-sized controls, keyboard focus indicators, and reduced-motion handling. Touch controls are hidden on menus and pause screens and shown only during active touch gameplay. Canvas dimensions follow visual viewport and orientation changes. The new universe UI follows the same responsive rules. Playwright browser regression checks exercise 320px phones through 1920px desktops, including landscape, command-hub tabs, game controls, pause behavior, and horizontal overflow. The service worker pre-caches the expansion scripts and stylesheet for offline use after the first successful load.
 
 ## Automated checks
 

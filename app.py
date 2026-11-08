@@ -1448,21 +1448,21 @@ let H = 0;
 let DPR = 1;
 
 function resize(){
-    DPR = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.5 : 2);
-
-    W = window.innerWidth;
-    H = window.innerHeight;
+    const viewport = window.visualViewport;
+    W = Math.max(1, Math.round(viewport ? viewport.width : window.innerWidth));
+    H = Math.max(1, Math.round(viewport ? viewport.height : window.innerHeight));
+    DPR = Math.min(window.devicePixelRatio || 1, W < 700 ? 1.5 : 2);
 
     canvas.width = Math.floor(W * DPR);
     canvas.height = Math.floor(H * DPR);
-
     canvas.style.width = W + "px";
     canvas.style.height = H + "px";
-
     ctx.setTransform(DPR,0,0,DPR,0,0);
 }
 
-window.addEventListener("resize", resize);
+window.addEventListener("resize", resize, {passive:true});
+window.addEventListener("orientationchange", () => requestAnimationFrame(resize), {passive:true});
+if(window.visualViewport) window.visualViewport.addEventListener("resize", () => requestAnimationFrame(resize), {passive:true});
 resize();
 
 
@@ -1481,13 +1481,19 @@ const screens = [
 
 function hideScreens(){
     for(const id of screens){
-        document.getElementById(id).classList.remove("active");
+        const screen=document.getElementById(id);
+        if(screen)screen.classList.remove("active");
     }
+    const touch=document.getElementById("touchControls");
+    if(touch)touch.style.display=(running&&!paused&&!landingShowcaseMode&&window.matchMedia("(pointer:coarse)").matches)?"block":"none";
 }
 
 function showScreen(id){
     hideScreens();
-    document.getElementById(id).classList.add("active");
+    const touch=document.getElementById("touchControls");
+    if(touch)touch.style.display="none";
+    const target=document.getElementById(id);
+    if(target)target.classList.add("active");
     try{sessionStorage.setItem("voidSpaceLastScreen",id);}catch(e){}
 }
 

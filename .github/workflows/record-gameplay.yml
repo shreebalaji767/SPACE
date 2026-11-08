@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - "app.py"
+      - "static/void-expansion.js"
+      - "static/void-universe.js"
+      - "static/void-responsive.css"
+      - "tests/browser_responsive.py"
       - ".github/workflows/record-gameplay.yml"
   workflow_dispatch:
 
@@ -47,6 +51,9 @@ jobs:
             sleep 1
           done
           curl --fail http://127.0.0.1:5000/ >/dev/null
+
+      - name: Run responsive browser regression checks
+        run: python tests/browser_responsive.py
 
       - name: Record real game-engine footage
         run: |

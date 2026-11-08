@@ -122,6 +122,7 @@ The **VOID COMMAND DECK** adds an optional expansion layer without replacing the
 - **Research lab:** permanently upgrade Squadron Link (wingman support), Quantum Reactor (starting energy), Salvage Array (bonus run credits), and Titanium Plating (starting hull) using banked credits.
 - **Operations:** launch Mothership Siege, Invasion Protocol, One-Life Gauntlet, Endless Boss Hunt, Sector Exploration, and Convoy Escort. These reuse the existing combat engine and apply operation-specific rules; Convoy Escort is a 60-second protection objective.
 - **New hostiles:** bomber, warden, and swarm variants begin appearing in later waves.
+- **Expanded fleet:** unlock the Aegis Sentinel defensive escort and Rift Runner high-speed flanker in the existing Ship Hangar.
 - **Faction standing:** Aurora Syndicate, Outer Rim Nomads, and Eclipse Collective reputation is earned through runs.
 - **Enemy codex:** encountered hostile types are recorded locally.
 - **Full save vault:** export or restore the original game profile and expansion data together. Imports validate the backup format and basic values before restoring.

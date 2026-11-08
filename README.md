@@ -11,6 +11,7 @@ A free, browser-based neon cyberpunk space-survival arcade game with a premium-s
 - **Multi-phase bosses + weak points:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health. A moving, intermittently exposed weak point deals bonus damage when hit, with impact slow motion, flashes, and a live phase-aware boss bar.
 - **Six weapon families + permanent armory:** Pulse is the starter weapon; spend earned credits to unlock homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity in the Ship Hangar. Choose a saved starting weapon, then weapon pickups cycle only through weapons you have unlocked and level them up. Rare reward crates can also unlock a weapon.
 - **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
+- **Rift Relic Forge:** recover shard caches during active combat, then forge five permanent relic paths — Aegis Heart, Nova Lens, Flux Coil, Starcore, and Phase Ward — with five ranks each. Relics grant starting hull, weapon damage, speed, energy, and shield bonuses. Shards and ranks persist in a separate local save with their own JSON backup/restore.
 - **Reward crates:** enemies can drop glowing, diamond-framed crates containing free credits, hull repair, energy, weapon damage, bomb upgrades, or a rare permanent weapon or ship unlock. No paid crates or purchases.
 - **Kill-chain combo rewards:** consecutive eliminations within a four-second window build a combo; every five kills grants bonus credits, a neon burst, and a brief slow-motion impact. Boss defeats trigger a longer cinematic finish.
 - **Daily contracts:** three UTC-date-based objectives — eliminate 10 hostiles, reach wave 5, and defeat a boss — award free credits and XP once per day. Progress and claims persist in localStorage.
@@ -129,6 +130,10 @@ The **VOID COMMAND DECK** adds an optional expansion layer without replacing the
 
 Expansion data is stored separately in `localStorage` under `voidSpaceExpansion`. The original `voidSpaceProfile` key and its existing migration path are preserved. All progression remains local to the browser; no account, database, paid service, ad network, or external gameplay API is introduced.
 
+
+## Rift Relic Forge
+
+Rift caches begin appearing during active runs after the opening combat window. Fly into the glowing diamond cache before it fades to collect 2–4 Rift Shards. The **Relic Forge** is available from the landing navigation and main menu. Spend shards on five permanent upgrade paths, each with five ranks: starting hull, weapon damage, ship speed, starting energy, and shield charges. Bonuses apply once at the beginning of a new run; they do not stack repeatedly during a run. Relic progress is stored separately in `localStorage` under `voidSpaceRelics`, preserving the original profile and Galactic Command data. The Forge includes its own validated JSON export/restore. No remote services or paid content are used.
 
 ## Galactic Command expansion
 

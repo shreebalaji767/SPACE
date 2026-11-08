@@ -4042,7 +4042,7 @@ for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSou
 def index():
     # HTML is a complete static document; bypass Jinja parsing so CSS selectors
     # such as `{#id` are not mistaken for Jinja comment delimiters.
-    return Response(HTML.replace("</body>", '<script src="/static/void-expansion.js" defer></script></body>'), mimetype="text/html")
+    return Response(HTML.replace("</head>", '<link rel="stylesheet" href="/static/void-responsive.css"></head>').replace("</body>", '<script src="/static/void-expansion.js" defer></script><script src="/static/void-universe.js" defer></script></body>'), mimetype="text/html")
 
 
 @app.route("/manifest.json")
@@ -4072,9 +4072,9 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v15";
+const CACHE = "void-space-v16";
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg", "/static/void-expansion.js"])));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg", "/static/void-expansion.js", "/static/void-universe.js", "/static/void-responsive.css"])));
   self.skipWaiting();
 });
 self.addEventListener("activate", event => {

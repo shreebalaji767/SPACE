@@ -190,3 +190,17 @@ Bug reports and improvements are welcome. Test keyboard, mouse, and touch input;
 ## License
 
 No license file is currently included. Add a license before redistributing the project if you want to specify reuse permissions.
+
+## Three.js cinematic 3D scene
+
+VOID SPACE now has an optional, real-time Three.js scene behind its landing page and menus:
+
+- A rotating ringed planet with a small orbiting moon and soft atmospheric glow.
+- A detailed 3D player ship with animated engine lights and gentle hover motion.
+- A deep star field, drifting 3D asteroids, orbital paths, and layered lighting.
+- Responsive camera framing and capped pixel ratios for smaller screens.
+- A **THREE.JS 3D SCENE** setting to turn the effect on or off. The preference is stored separately in localStorage as `voidSpace3DEnabled`.
+- The 3D renderer is hidden during active combat so it cannot cover or slow the original 2D gameplay canvas. The existing combat engine, controls, and save keys are unchanged.
+- If WebGL or the Three.js module is unavailable, VOID SPACE continues using its original 2D graphics. Reduced-motion and low-power devices receive a still 3D scene rather than a continuously animated one.
+
+Three.js is loaded as a free, version-pinned ES module from jsDelivr (`three@0.180.0`). It is a graphics library, not an AI service or gameplay API. The service worker attempts to cache the module and its core file for offline use after a successful connection; if the CDN is unavailable on the first load, the game falls back cleanly and the normal game remains playable. No account, paid asset, subscription, ad network, or database is added.

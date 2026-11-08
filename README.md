@@ -114,6 +114,24 @@ This is a small Flask application with a single main game file.
 
 For a WSGI deployment, the Flask application object is `app` in `app.py`; a platform-supported server such as Gunicorn can run it with `gunicorn app:app` if Gunicorn is added to the deployment dependencies.
 
+
+## Expansion systems
+
+The **VOID COMMAND DECK** adds an optional expansion layer without replacing the original game engine or the existing `voidSpaceProfile` save:
+
+- **Research lab:** permanently upgrade Squadron Link (wingman support), Quantum Reactor (starting energy), Salvage Array (bonus run credits), and Titanium Plating (starting hull) using banked credits.
+- **Operations:** launch Mothership Siege, Invasion Protocol, One-Life Gauntlet, Endless Boss Hunt, Sector Exploration, and Convoy Escort. These reuse the existing combat engine and apply operation-specific rules; Convoy Escort is a 60-second protection objective.
+- **New hostiles:** bomber, warden, and swarm variants begin appearing in later waves.
+- **Faction standing:** Aurora Syndicate, Outer Rim Nomads, and Eclipse Collective reputation is earned through runs.
+- **Enemy codex:** encountered hostile types are recorded locally.
+- **Full save vault:** export or restore the original game profile and expansion data together. Imports validate the backup format and basic values before restoring.
+
+Expansion data is stored separately in `localStorage` under `voidSpaceExpansion`. The original `voidSpaceProfile` key and its existing migration path are preserved. All progression remains local to the browser; no account, database, paid service, ad network, or external gameplay API is introduced.
+
+## Automated checks
+
+GitHub Actions runs a Python compile check and Flask smoke tests on pushes and pull requests. The tests verify the game route, expansion asset, PWA endpoints, and health endpoint. Browser gameplay and touch-device testing should still be performed after major gameplay changes.
+
 ## Save data and privacy
 
 The game stores credits, pilot level/XP, unlocked and selected ships, per-ship skill-tree ranks, achievements, lifetime combat statistics, campaign progress, mode records, best score/wave, daily contract progress/claims, and sound/visual settings in browser `localStorage` under `voidSpaceProfile`. The Save Backup / Restore screen exports and imports this profile as JSON.

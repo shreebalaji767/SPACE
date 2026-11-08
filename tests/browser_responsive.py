@@ -77,12 +77,8 @@ async def main():
             has_touch=True,
             device_scale_factor=1,
         )
-        await context.add_init_script("""() => {
-            localStorage.setItem("voidSpaceProfile", JSON.stringify({coins: 5000}));
-            localStorage.setItem("voidSpaceUniverse", JSON.stringify({
-                resources: {alloy: 100, crystal: 100, data: 100}
-            }));
-        }""")
+        await context.add_init_script("""localStorage.setItem("voidSpaceProfile", JSON.stringify({coins: 5000}));
+        localStorage.setItem("voidSpaceUniverse", JSON.stringify({resources: {alloy: 100, crystal: 100, data: 100}}));""")
         page = await context.new_page()
         page_errors = []
         page.on("pageerror", lambda error: page_errors.append(str(error)))

@@ -1,6 +1,6 @@
 # VOID SPACE 🚀
 
-A free, browser-based neon cyberpunk space-survival arcade game with a premium-style landing page and a looping **prerecorded gameplay video**. Pilot a ship through escalating enemy waves, fight multi-phase bosses, open reward crates, chain kill combos, complete daily contracts, earn credits, and unlock ships.
+A free, browser-based space-survival arcade game with a cinematic landing page, optional Three.js 3D scene, and a looping **prerecorded gameplay video**. Pilot a ship through escalating enemy waves, fight multi-phase bosses, open reward crates, chain kill combos, complete daily contracts, earn credits, and unlock ships.
 
 **No paid items, no ads, no external game assets, and no database required.** Player progression is stored locally in the browser.
 
@@ -11,7 +11,7 @@ A free, browser-based neon cyberpunk space-survival arcade game with a premium-s
 - **Multi-phase bosses + weak points:** Dreadnought, Void Wraith, and Nova Colossus change attacks at 66% and 32% health. A moving, intermittently exposed weak point deals bonus damage when hit, with impact slow motion, flashes, and a live phase-aware boss bar.
 - **Six weapon families + permanent armory:** Pulse is the starter weapon; spend earned credits to unlock homing missiles, plasma shotgun, phase railgun, chain lightning, and singularity in the Ship Hangar. Choose a saved starting weapon, then weapon pickups cycle only through weapons you have unlocked and level them up. Rare reward crates can also unlock a weapon.
 - **Cinematic effects:** slow-motion bombs, colored impact particles, boss phase flashes, glowing debris, and a lightweight-effects setting for slower devices.
-- **Rift Relic Forge:** recover shard caches during active combat, then forge five permanent relic paths — Aegis Heart, Nova Lens, Flux Coil, Starcore, and Phase Ward — with five ranks each. Relics grant starting hull, weapon damage, speed, energy, and shield bonuses. Shards and ranks persist in a separate local save with their own JSON backup/restore.
+- **Rift Relic Forge:** recover glowing shard caches during active combat (2–4 shards per cache), then forge five permanent relic paths — Aegis Heart, Nova Lens, Flux Coil, Starcore, and Phase Ward — with five ranks each. Relics grant starting hull, weapon damage, ship speed, energy, and shield bonuses at the beginning of each new run. Shards, discovery count, and ranks persist in a separate local save with validated JSON backup/restore. The Forge is accessible from the landing navigation and main menu.
 - **Reward crates:** enemies can drop glowing, diamond-framed crates containing free credits, hull repair, energy, weapon damage, bomb upgrades, or a rare permanent weapon or ship unlock. No paid crates or purchases.
 - **Kill-chain combo rewards:** consecutive eliminations within a four-second window build a combo; every five kills grants bonus credits, a neon burst, and a brief slow-motion impact. Boss defeats trigger a longer cinematic finish.
 - **Daily contracts:** three UTC-date-based objectives — eliminate 10 hostiles, reach wave 5, and defeat a boss — award free credits and XP once per day. Progress and claims persist in localStorage.
@@ -133,7 +133,7 @@ Expansion data is stored separately in `localStorage` under `voidSpaceExpansion`
 
 ## Rift Relic Forge
 
-Rift caches begin appearing during active runs after the opening combat window. Fly into the glowing diamond cache before it fades to collect 2–4 Rift Shards. The **Relic Forge** is available from the landing navigation and main menu. Spend shards on five permanent upgrade paths, each with five ranks: starting hull, weapon damage, ship speed, starting energy, and shield charges. Bonuses apply once at the beginning of a new run; they do not stack repeatedly during a run. Relic progress is stored separately in `localStorage` under `voidSpaceRelics`, preserving the original profile and Galactic Command data. The Forge includes its own validated JSON export/restore. No remote services or paid content are used.
+Rift caches begin appearing during active runs after the opening combat window. Fly into the glowing diamond cache before it fades to collect 2–4 Rift Shards. The **Relic Forge** is available from the landing navigation and main menu. A cache appears roughly every 27 seconds during an active run; each cache remains available for a limited time and awards 2–4 shards when collected. Spend shards on five permanent upgrade paths, each with five ranks: starting hull, weapon damage, ship speed, starting energy, and shield charges. Bonuses are applied once when a new run starts, not repeatedly on every frame or during the same run. Relic progress is stored separately in `localStorage` under `voidSpaceRelics`, preserving the original profile, `voidSpaceExpansion`, and `voidSpaceUniverse` data. The Forge includes its own validated, size-limited JSON export/restore. Restoring a relic backup replaces the relic data on that browser; export a backup first if you want to preserve the current relic collection. No remote services or paid content are used.
 
 ## Galactic Command expansion
 
@@ -155,7 +155,7 @@ The additional responsive stylesheet uses dynamic viewport sizing, safe-area ins
 
 ## Automated checks
 
-GitHub Actions runs a Python compile check and Flask smoke tests on pushes and pull requests. The tests verify the game route, expansion asset, PWA endpoints, and health endpoint. Browser gameplay and touch-device testing should still be performed after major gameplay changes.
+GitHub Actions runs a Python compile check, JavaScript syntax checks for the expansion/universe/3D/relic scripts, and Flask smoke tests on pushes and pull requests. The tests verify the game route, expansion assets (including the Rift Relic Forge), service-worker cache entries, PWA endpoints, and health endpoint. The responsive Playwright workflow checks nine viewport sizes: 320×568, 360×740, 390×844, 430×932, 768×1024, 1024×768, 1366×768, 1920×1080, and 844×390 landscape. It checks for horizontal overflow, valid canvas sizing, correct touch-control visibility, desktop controls, command-hub navigation, and key persistent progression interactions. Automated browser checks do not replace testing on physical devices and browsers.
 
 ## Save data and privacy
 

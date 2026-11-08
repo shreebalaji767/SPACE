@@ -1299,6 +1299,8 @@ button:hover{box-shadow:0 6px 18px rgba(0,0,0,.16);}
         <div class="setting-row"><span>SOUND EFFECTS</span><button id="soundToggle">ON</button></div>
         <div class="setting-row"><span>SCREEN SHAKE</span><button id="shakeToggle">ON</button></div>
         <div class="setting-row"><span>VISUAL FX</span><button id="fxToggle">FULL</button></div>
+        <div class="setting-row"><span>THREE.JS 3D SCENE</span><span class="setting-value" id="threeSceneValue">ENABLED</span></div>
+        <button id="threeSceneToggle" type="button" aria-pressed="true">ON</button>
 
         <div class="setting-row">
             <span>MOUSE AIM</span>
@@ -4048,7 +4050,7 @@ for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSou
 def index():
     # HTML is a complete static document; bypass Jinja parsing so CSS selectors
     # such as `{#id` are not mistaken for Jinja comment delimiters.
-    return Response(HTML.replace("</head>", '<link rel="stylesheet" href="/static/void-responsive.css"></head>').replace("</body>", '<script src="/static/void-expansion.js" defer></script><script src="/static/void-universe.js" defer></script></body>'), mimetype="text/html")
+    return Response(HTML.replace("</head>", '<link rel="stylesheet" href="/static/void-responsive.css"></head>').replace("</body>", '<script src="/static/void-expansion.js" defer></script><script src="/static/void-universe.js" defer></script><script src="/static/void-3d.js" defer></script></body>'), mimetype="text/html")
 
 
 @app.route("/manifest.json")
@@ -4078,23 +4080,38 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v16";
+const CACHE = "void-space-v17";
+const THREE_ASSETS = [
+  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js"
+];
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["/", "/manifest.json", "/icon.svg", "/static/void-expansion.js", "/static/void-universe.js", "/static/void-responsive.css"])));
+  event.waitUntil(caches.open(CACHE).then(async cache => {
+    await cache.addAll(["/", "/manifest.json", "/icon.svg", "/static/void-expansion.js", "/static/void-universe.js", "/static/void-responsive.css", "/static/void-3d.js"]);
+    await Promise.all(THREE_ASSETS.map(url => cache.add(url).catch(() => null)));
+  }));
   self.skipWaiting();
 });
 self.addEventListener("activate", event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))));
   self.clients.claim();
 });
+const THREE_ASSETS = [
+  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js"
+];
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) return;
+  if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  const localRequest = requestUrl.origin === self.location.origin;
+  const threeRequest = requestUrl.origin === "https://cdn.jsdelivr.net" && THREE_ASSETS.includes(requestUrl.href);
+  if (!localRequest && !threeRequest) return;
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-    if (response.ok && (event.request.mode === "navigate" || /manifest\\.json|icon\\.svg/.test(new URL(event.request.url).pathname))) {
+    if (response.ok && (threeRequest || event.request.mode === "navigate" || /manifest\\.json|icon\\.svg/.test(requestUrl.pathname))) {
       const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy));
     }
     return response;
-  }).catch(() => caches.match("/"))));
+  }).catch(() => localRequest ? caches.match("/") : Promise.reject(new Error("Three.js is not available offline yet")))));
 });
 """
     return Response(worker, mimetype="application/javascript", headers={"Cache-Control": "no-cache"})

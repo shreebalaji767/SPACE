@@ -2,6 +2,9 @@
 
 A free, browser-based space-survival arcade game with a cinematic landing page, optional Three.js 3D scene, and a looping **prerecorded gameplay video**. Pilot a ship through escalating enemy waves, fight multi-phase bosses, open reward crates, chain kill combos, complete daily contracts, earn credits, and unlock ships.
 
+<text></text>
+**[▶ PLAY VOID SPACE — LIVE](https://void-space-3d.onrender.com/)**
+
 **No paid items, no ads, no external game assets, and no database required.** Player progression is stored locally in the browser.
 
 ## Features
@@ -115,7 +118,6 @@ This is a small Flask application with a single main game file.
 
 For a WSGI deployment, the Flask application object is `app` in `app.py`; a platform-supported server such as Gunicorn can run it with `gunicorn app:app` if Gunicorn is added to the deployment dependencies.
 
-
 ## Expansion systems
 
 The **VOID COMMAND DECK** adds an optional expansion layer without replacing the original game engine or the existing `voidSpaceProfile` save:
@@ -129,7 +131,6 @@ The **VOID COMMAND DECK** adds an optional expansion layer without replacing the
 - **Full save vault:** export or restore the original game profile and expansion data together. Imports validate the backup format and basic values before restoring.
 
 Expansion data is stored separately in `localStorage` under `voidSpaceExpansion`. The original `voidSpaceProfile` key and its existing migration path are preserved. All progression remains local to the browser; no account, database, paid service, ad network, or external gameplay API is introduced.
-
 
 ## Rift Relic Forge
 

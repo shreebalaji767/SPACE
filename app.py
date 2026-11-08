@@ -4042,7 +4042,7 @@ for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSou
 def index():
     # HTML is a complete static document; bypass Jinja parsing so CSS selectors
     # such as `{#id` are not mistaken for Jinja comment delimiters.
-    return Response(HTML, mimetype="text/html")
+    return Response(HTML.replace("</body>", '<script src="/static/void-expansion.js" defer></script></body>'), mimetype="text/html")
 
 
 @app.route("/manifest.json")

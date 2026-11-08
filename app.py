@@ -4050,7 +4050,7 @@ for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSou
 def index():
     # HTML is a complete static document; bypass Jinja parsing so CSS selectors
     # such as `{#id` are not mistaken for Jinja comment delimiters.
-    return Response(HTML.replace("</head>", '<link rel="stylesheet" href="/static/void-responsive.css"></head>').replace("</body>", '<script src="/static/void-expansion.js" defer></script><script src="/static/void-universe.js" defer></script><script src="/static/void-3d.js" defer></script></body>'), mimetype="text/html")
+    return Response(HTML.replace("</head>", '<link rel="stylesheet" href="/static/void-responsive.css"></head>').replace("</body>", '<script src="/static/void-expansion.js" defer></script><script src="/static/void-universe.js" defer></script><script src="/static/void-3d.js" defer></script><script src="/static/void-relics.js" defer></script></body>'), mimetype="text/html")
 
 
 @app.route("/manifest.json")
@@ -4080,14 +4080,14 @@ def pwa_icon():
 @app.route("/sw.js")
 def pwa_service_worker():
     worker = """
-const CACHE = "void-space-v17";
+const CACHE = "void-space-v18";
 const THREE_ASSETS = [
   "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
   "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js"
 ];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(async cache => {
-    await cache.addAll(["/", "/manifest.json", "/icon.svg", "/static/void-expansion.js", "/static/void-universe.js", "/static/void-responsive.css", "/static/void-3d.js"]);
+    await cache.addAll(["/", "/manifest.json", "/icon.svg", "/static/void-expansion.js", "/static/void-universe.js", "/static/void-responsive.css", "/static/void-3d.js", "/static/void-relics.js"]);
     await Promise.all(THREE_ASSETS.map(url => cache.add(url).catch(() => null)));
   }));
   self.skipWaiting();

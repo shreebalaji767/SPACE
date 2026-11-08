@@ -33,7 +33,11 @@ class VoidSpaceSmokeTests(unittest.TestCase):
     def test_pwa_endpoints(self):
         self.assertEqual(self.client.get("/manifest.json").status_code, 200)
         self.assertEqual(self.client.get("/icon.svg").status_code, 200)
-        self.assertEqual(self.client.get("/sw.js").status_code, 200)
+        sw = self.client.get("/sw.js")
+        self.assertEqual(sw.status_code, 200)
+        self.assertIn(b"void-space-v16", sw.data)
+        self.assertIn(b"/static/void-universe.js", sw.data)
+        self.assertIn(b"/static/void-responsive.css", sw.data)
 
     def test_health_endpoint(self):
         self.assertEqual(self.client.get("/health").data, b"VOID SPACE ONLINE")

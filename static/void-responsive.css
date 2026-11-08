@@ -81,3 +81,11 @@ button:disabled{cursor:not-allowed;opacity:.48}
 @media(max-width:360px){
  .landing-nav-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* Optional Three.js scene sits above the 2D backdrop but below every game panel. */
+#game{z-index:0}
+#voidThreeScene{z-index:1;pointer-events:none;max-width:none}
+.screen{z-index:20}
+#threeSceneToggle{width:min(260px,100%);margin:8px auto 14px}
+@media(prefers-reduced-motion:reduce){#voidThreeScene{opacity:.72!important}}

@@ -4028,22 +4028,32 @@ document.getElementById("landingModesButton").addEventListener("click",()=>{wind
    INITIAL STATE
 ========================================================= */
 
-// Fresh visits always start at the landing page. A browser refresh restores the
-// last screen instead of unexpectedly navigating home.
+// A fresh visit starts at the landing page. Reloading the browser/page
+// restores the exact screen that was visible immediately before refresh.
+function rememberCurrentScreen(){
+  try{
+    const activeScreen=screens.find(id=>document.getElementById(id)?.classList.contains("active"));
+    if(activeScreen)sessionStorage.setItem("voidSpaceLastScreen",activeScreen);
+  }catch(e){}
+}
+window.addEventListener("pagehide",rememberCurrentScreen);
+window.addEventListener("beforeunload",rememberCurrentScreen);
 try{
   const nav=performance.getEntriesByType("navigation")[0];
-  const isRefresh=!!nav&&nav.type==="reload";
+  const isRefresh=!!nav&&(nav.type==="reload"||nav.type==="back_forward");
   const lastScreen=sessionStorage.getItem("voidSpaceLastScreen");
-  const validScreen=isRefresh&&lastScreen&&screens.includes(lastScreen)&&document.getElementById(lastScreen);
-  if(validScreen){
-    hideScreens();
-    document.getElementById(lastScreen).classList.add("active");
-  }else if(!isRefresh){
+  const target=isRefresh&&lastScreen&&screens.includes(lastScreen)?document.getElementById(lastScreen):null;
+  hideScreens();
+  if(target){
+    target.classList.add("active");
+  }else{
     sessionStorage.setItem("voidSpaceLastScreen","landingScreen");
-    hideScreens();
-    document.getElementById("landingScreen").classList.add("active");
+    document.getElementById("landingScreen")?.classList.add("active");
   }
-}catch(e){}
+}catch(e){
+  hideScreens();
+  document.getElementById("landingScreen")?.classList.add("active");
+}
 loadVoidProfile();createStars();updateHUD();paintMeta();
 // The landing page plays only the prerecorded gameplay video. The real game engine\n// is initialised here only when the recording workflow explicitly uses ?record=1.
 for(const [id,onText,offText,value] of [["soundToggle","ON","OFF",window.voidSoundEnabled],["shakeToggle","ON","OFF",window.voidShakeEnabled],["fxToggle","FULL","LITE",window.voidFxEnabled]]){const el=document.getElementById(id);if(el)el.textContent=value?onText:offText;}

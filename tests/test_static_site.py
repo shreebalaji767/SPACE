@@ -25,11 +25,15 @@ class StaticSiteTests(unittest.TestCase):
         self.assertNotIn('href="/manifest.json"', html)
 
     def test_existing_game_modules_are_included(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        paths = (
+            "index.html", "static/void-expansion.js",
+            "static/void-universe.js", "static/void-relics.js",
+        )
+        source = "\\n".join((ROOT / path).read_text(encoding="utf-8") for path in paths)
         for feature in ("voidSpaceProfile", "voidSpaceExpansion",
                         "voidSpaceUniverse", "voidSpaceRelics",
                         "Campaign", "Boss Rush"):
-            self.assertIn(feature, html)
+            self.assertIn(feature, source)
 
     def test_worker_is_subpath_aware(self):
         worker = (ROOT / "sw.js").read_text(encoding="utf-8")

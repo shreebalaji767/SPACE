@@ -1,4 +1,4 @@
-name: VOID SPACE smoke tests
+name: VOID SPACE static and regression tests
 
 on:
   push:
@@ -16,10 +16,21 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Compile Python
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+      - name: Install Chromium for responsive browser checks
+        run: python -m playwright install --with-deps chromium
+      - name: Compile legacy Python reference
         run: python -m py_compile app.py
-      - name: Check expansion JavaScript syntax
+      - name: Check JavaScript syntax
         run: node --check static/void-expansion.js && node --check static/void-universe.js && node --check static/void-3d.js && node --check static/void-relics.js
-      - name: Run Flask smoke tests
+      - name: Run static structure and legacy smoke tests
         run: python -m unittest discover -s tests -v
+      - name: Run responsive browser tests against the static site
+        run: |
+          python -m http.server 5000 --bind 127.0.0.1 >/tmp/void-space-http.log 2>&1 &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID" EXIT
+          curl --retry 20 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:5000/ -o /dev/null
+          VOID_SPACE_URL=http://127.0.0.1:5000/ python tests/browser_responsive.py

@@ -1504,15 +1504,29 @@ function goToLanding(){
     const video=document.getElementById("previewVideo");
     if(video){const p=video.play();if(p&&p.catch)p.catch(()=>{});}
 }
-document.getElementById("globalHomeLogo")?.addEventListener("click",goToLanding);
-document.querySelector(".landing-brand")?.addEventListener("click",goToLanding);
-document.querySelector(".landing-brand")?.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goToLanding();}});
-for(const el of [document.getElementById("menuHomeLogo"),document.getElementById("menuHomeWordmark"),document.getElementById("menuHomeSubtitle")]){
-    if(!el)continue;
-    el.style.cursor="pointer";
-    el.addEventListener("click",goToLanding);
-    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goToLanding();}});
-}
+// One delegated home-logo handler keeps every visible VOID SPACE logo working
+// even when screens are rebuilt or new logo placements are added later.
+const HOME_LOGO_SELECTOR = "#globalHomeLogo, .landing-brand, #menuHomeLogo, #menuHomeWordmark, #menuHomeSubtitle";
+document.querySelectorAll(HOME_LOGO_SELECTOR).forEach(el => {
+    el.style.cursor = "pointer";
+    if (el.matches("svg, div")) {
+        el.setAttribute("role", "link");
+        if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+    }
+});
+document.addEventListener("click", event => {
+    const logo = event.target.closest?.(HOME_LOGO_SELECTOR);
+    if (!logo) return;
+    event.preventDefault();
+    goToLanding();
+}, true);
+document.addEventListener("keydown", event => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const logo = event.target.closest?.(HOME_LOGO_SELECTOR);
+    if (!logo) return;
+    event.preventDefault();
+    goToLanding();
+}, true);
 
 
 /* =========================================================

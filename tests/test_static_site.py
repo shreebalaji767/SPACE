@@ -32,7 +32,7 @@ class StaticSiteTests(unittest.TestCase):
         source = "\\n".join((ROOT / path).read_text(encoding="utf-8") for path in paths)
         for feature in ("voidSpaceProfile", "voidSpaceExpansion",
                         "voidSpaceUniverse", "voidSpaceRelics",
-                        "Campaign", "Boss Rush"):
+                        "campaign", "Boss Rush"):
             self.assertIn(feature, source)
 
     def test_worker_is_subpath_aware(self):

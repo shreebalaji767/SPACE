@@ -2,11 +2,21 @@
 
 A browser-based space-survival arcade game. Pilot your ship, survive enemy waves, defeat multi-phase bosses, unlock ships and weapons, and explore new sectors.
 
-<p align="center">
-  <a href="https://void-space-3d.onrender.com/"><strong>▶ PLAY VOID SPACE — LIVE</strong></a>
-</p>
+**Play:** https://shreebalaji767.github.io/SPACE/
 
-Free to play. No ads, paid items, accounts, or database. Progress is saved locally in your browser.
+Free to play. No ads, paid items, accounts, backend, or database. Progress is saved locally in your browser.
+
+## Static site deployment
+
+VOID SPACE is published as a static GitHub Pages site. The playable site uses HTML, CSS, and browser JavaScript; it does not require Flask, Python, a server process, or a database.
+
+- Entry page: `index.html`
+- Game modules and styles: `static/`
+- PWA manifest and offline worker: `manifest.json`, `sw.js`
+- Additional tree menu: `tree-menu.html`
+- GitHub Pages deployment: `.github/workflows/pages.yml`
+
+After pushing to `main`, the Pages workflow uploads the repository as a static artifact and deploys it. In repository Settings → Pages, select **GitHub Actions** as the deployment source if it is not already selected.
 
 ## Features
 
@@ -35,7 +45,7 @@ Free to play. No ads, paid items, accounts, or database. Progress is saved local
 
 ## Saves and privacy
 
-Progress is stored in browser `localStorage`, not on a server:
+Progress remains in browser `localStorage`, not on a server:
 
 - `voidSpaceProfile` — main profile, ships, weapons, skills, achievements, and records.
 - `voidSpaceExpansion` — Command Deck expansion.
@@ -46,63 +56,34 @@ Use the in-game backup/export options to keep a copy of your saves. Data stays i
 
 ## Run locally
 
-Requires Python 3.10+ (Python 3.11+ recommended).
+Open `index.html` in a local static web server for full PWA behavior. For example, with Python installed:
 
 ```bash
-git clone https://github.com/shreebalaji767/SPACE.git
-cd SPACE
-python -m venv .venv
+python -m http.server 8000
 ```
 
-Activate the environment:
-
-```powershell
-# Windows
-.venv\Scripts\Activate.ps1
-```
-
-```bash
-# macOS / Linux
-source .venv/bin/activate
-```
-
-Install and run:
-
-```bash
-pip install -r requirements.txt
-python app.py
-```
-
-Open [http://localhost:10000](http://localhost:10000). The server uses the `PORT` environment variable when provided (default: `10000`).
-
-## Deployment
-
-The live version is hosted at [void-space-3d.onrender.com](https://void-space-3d.onrender.com/).
-
-- Build command: `pip install -r requirements.txt`
-- Start command: `python app.py`
-- Health check: `/health`
-- HTTPS is required for service-worker and PWA installation support.
-- No database or secret environment variables are required.
+Then visit http://localhost:8000/ when serving this folder directly. The game itself does not use Python as an application backend.
 
 ## Development checks
 
-GitHub Actions runs Python compilation, JavaScript syntax checks, Flask smoke tests, and responsive browser regression tests. Browser tests cover phone, tablet, desktop, and landscape layouts. Automated tests do not replace testing on physical devices.
+GitHub Actions runs static-site structure checks, Python legacy smoke tests, and JavaScript syntax checks. Responsive browser tests are retained for phone, tablet, desktop, and landscape layouts; automated tests do not replace testing on physical devices.
 
 ## Project structure
 
 ```text
 SPACE/
-├── app.py
-├── requirements.txt
+├── index.html
+├── manifest.json
+├── sw.js
+├── icon.svg
+├── tree-menu.html
 ├── static/
 ├── tests/
-├── .github/workflows/
-└── README.md
+└── .github/workflows/
 ```
 
 ## Notes
 
 - The landing page uses prerecorded gameplay footage; gameplay begins when **Play Now** is selected.
 - Three.js is an optional, version-pinned graphics library. If it cannot load or WebGL is unavailable, the game falls back to 2D.
-- The game is free and does not use ads, paid gameplay services, or a player database.
+- Existing `app.py` and its tests are retained as legacy development references; GitHub Pages serves `index.html` and does not execute them.
